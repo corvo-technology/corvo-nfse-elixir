@@ -59,7 +59,7 @@ defmodule CorvoNfse.TransportTest do
     test "serializes the JSON body with wire keys unchanged" do
       expect_request(json_response(%{"data" => %{"id" => "comp_1"}}))
 
-      params = %{"legalName" => "Acme Ltda", tradeName: "Acme", "simpleNational" => true}
+      params = %{"legalName" => "Acme Ltda", "tradeName" => "Acme", "simpleNational" => true}
 
       assert {:ok, %{"id" => "comp_1"}} = Companies.create(client(), params)
 

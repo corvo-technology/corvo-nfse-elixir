@@ -10,37 +10,24 @@ defmodule CorvoNfse.Types.Billing do
 
     defstruct [:plan, :subscription, :usage]
 
+    @typedoc """
+    Wire shape of `GET /billing/plan`. `plan`, `subscription` and `usage` are
+    plain JSON snake_case string-keyed objects:
+
+      * `plan` - `slug`, `name`, `monthly_allowance`, `daily_limit`,
+        `max_active_companies`, `monthly_price_cents`
+      * `subscription` - `status`, `paid_until`, `cancel_at_period_end`,
+        `scheduled_plan`, `blocked`
+      * `usage` - `overage_units`, `overage_amount_cents`, `hard_limit`,
+        `credits_used`, `credits_reserved`, `credits_remaining`,
+        `monthly_allowance`, `daily_usage`, `daily_limit`,
+        `active_companies`, `max_active_companies`, `period_start`,
+        `period_end`
+    """
     @type t :: %__MODULE__{
-            plan: %{
-              required("slug") => String.t(),
-              required("name") => String.t(),
-              required("monthly_allowance") => integer(),
-              required("daily_limit") => integer() | nil,
-              required("max_active_companies") => integer(),
-              required("monthly_price_cents") => integer()
-            },
-            subscription: %{
-              required("status") => String.t(),
-              required("paid_until") => String.t() | nil,
-              required("cancel_at_period_end") => boolean(),
-              required("scheduled_plan") => String.t() | nil,
-              required("blocked") => boolean()
-            },
-            usage: %{
-              required("overage_units") => integer(),
-              required("overage_amount_cents") => integer(),
-              required("hard_limit") => integer() | nil,
-              required("credits_used") => integer(),
-              required("credits_reserved") => integer(),
-              required("credits_remaining") => integer(),
-              required("monthly_allowance") => integer(),
-              required("daily_usage") => integer(),
-              required("daily_limit") => integer() | nil,
-              required("active_companies") => integer(),
-              required("max_active_companies") => integer(),
-              required("period_start") => String.t() | nil,
-              required("period_end") => String.t() | nil
-            }
+            plan: %{optional(String.t()) => term()},
+            subscription: %{optional(String.t()) => term()},
+            usage: %{optional(String.t()) => term()}
           }
   end
 

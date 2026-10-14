@@ -26,7 +26,7 @@ defmodule CorvoNfse.ErrorTest do
 
   test "message falls back to status and code when message is missing" do
     assert Exception.message(%Error{status: 503, code: "http_503"}) ==
-             ~s(Corvo NFS-e API error (status=503, code="http_503"))
+             ~s|Corvo NFS-e API error (status=503, code="http_503")|
   end
 
   test "fields default to nil" do

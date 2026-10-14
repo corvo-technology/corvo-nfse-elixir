@@ -6,8 +6,11 @@ defmodule CorvoNfse.Types.Company do
   unchanged from the server.
   """
 
-  @type tax_regime :: "MEI" | "Simples Nacional" | "Lucro Presumido" | "Lucro Real"
-  @type environment :: "test" | "live"
+  @typedoc ~S(Tax regime wire value: "MEI" | "Simples Nacional" | "Lucro Presumido" | "Lucro Real".)
+  @type tax_regime :: String.t()
+
+  @typedoc ~S(Environment wire value: "test" | "live".)
+  @type environment :: String.t()
 
   defstruct [
     :id,
@@ -79,14 +82,10 @@ defmodule CorvoNfse.Types.Company do
   """
   @type update_params :: map()
 
-  @typedoc "Nested address object for create/update params."
-  @type address_input :: %{
-          required("street") => String.t(),
-          required("district") => String.t(),
-          required("city") => String.t(),
-          required("state") => String.t(),
-          required("zip") => String.t(),
-          optional("number") => String.t(),
-          optional("complement") => String.t()
-        }
+  @typedoc """
+  Nested address object for create/update params: a plain JSON string-keyed
+  map. Required keys: `street`, `district`, `city`, `state`, `zip`.
+  Optional keys: `number`, `complement`.
+  """
+  @type address_input :: %{optional(String.t()) => term()}
 end

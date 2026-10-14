@@ -18,14 +18,13 @@ defmodule CorvoNfse.Types.Common do
   fields for documentation, construction and typed wrappers.
   """
 
-  @type pagination :: %{
-          required("limit") => integer(),
-          required("hasMore") => boolean(),
-          required("nextCursor") => String.t() | nil
-        }
+  # String-keyed map: Elixir map typespecs only accept atom keys with
+  # required()/optional(), so a JSON object with string keys is typed as a
+  # general string-keyed map.
+  @type pagination :: %{optional(String.t()) => term()}
 
   @typedoc "A list page as returned by every `list`/`iterate` operation."
   @type page :: %{data: [map()], pagination: pagination() | nil}
 
-  @type environment :: "test" | "live"
+  @type environment :: String.t()
 end

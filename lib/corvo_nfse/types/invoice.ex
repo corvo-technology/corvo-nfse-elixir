@@ -7,19 +7,18 @@ defmodule CorvoNfse.Types.Invoice do
   with these string keys.
   """
 
-  @type environment :: "test" | "live"
+  @typedoc ~S(Environment wire value: "test" | "live".)
+  @type environment :: String.t()
 
-  @type status ::
-          "queued"
-          | "processing"
-          | "authorized"
-          | "rejected"
-          | "retry_pending"
-          | "reconciliation_required"
-          | "manual_review"
-          | "failed"
+  @typedoc """
+  Invoice status wire value: `"queued" | "processing" | "authorized" |
+  "rejected" | "retry_pending" | "reconciliation_required" |
+  "manual_review" | "failed"`.
+  """
+  @type status :: String.t()
 
-  @type stage :: "pending" | "authorized" | "documents_ready" | "completed" | "failed"
+  @typedoc ~S(Stage wire value: "pending" | "authorized" | "documents_ready" | "completed" | "failed".)
+  @type stage :: String.t()
 
   @type download_format :: :pdf | :xml | String.t()
 

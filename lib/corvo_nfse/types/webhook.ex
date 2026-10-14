@@ -16,18 +16,17 @@ defmodule CorvoNfse.Types.Webhook do
     "webhook.test"
   ]
 
-  @type event ::
-          "nfse.invoice.authorized"
-          | "nfse.invoice.rejected"
-          | "nfse.invoice.failed"
-          | "nfse.invoice.reconciliation_required"
-          | "nfse.invoice.manual_review"
-          | "nfse.invoice.documents_ready"
-          | "nfse.invoice.email_sent"
-          | "nfse.invoice.email_failed"
-          | "webhook.test"
+  @typedoc """
+  Webhook event wire value - one of the canonical 9 events from `events/0`:
+  `nfse.invoice.authorized`, `nfse.invoice.rejected`, `nfse.invoice.failed`,
+  `nfse.invoice.reconciliation_required`, `nfse.invoice.manual_review`,
+  `nfse.invoice.documents_ready`, `nfse.invoice.email_sent`,
+  `nfse.invoice.email_failed`, `webhook.test`.
+  """
+  @type event :: String.t()
 
-  @type environment :: "test" | "live"
+  @typedoc ~S(Environment wire value: "test" | "live".)
+  @type environment :: String.t()
 
   @doc "The canonical 9 webhook events."
   @spec events() :: [String.t()]
@@ -53,14 +52,11 @@ defmodule CorvoNfse.Types.Webhook do
   @typedoc "Params for `CorvoNfse.Resources.Webhooks.create/2`: `%{url:, events:}`."
   @type create_params :: map()
 
-  @typedoc "Stats returned by `Deliveries.stats/2`."
-  @type delivery_stats :: %{
-          required("total") => integer(),
-          required("sent") => integer(),
-          required("failed") => integer(),
-          required("pending") => integer(),
-          required("delayed") => integer()
-        }
+  @typedoc """
+  Stats returned by `Deliveries.stats/2`: a plain JSON string-keyed map of
+  integers under the keys `total`, `sent`, `failed`, `pending`, `delayed`.
+  """
+  @type delivery_stats :: %{optional(String.t()) => term()}
 
   defmodule Delivery do
     @moduledoc "Wire shape of a webhook delivery attempt."
