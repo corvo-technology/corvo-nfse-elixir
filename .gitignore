@@ -1,0 +1,23 @@
+# Build artifacts
+_build/
+cover/
+doc/
+.fetch
+
+# Dependencies
+deps/
+
+# Crash dumps
+erl_crash.dump
+
+# ExUnit re-exports
+test/test_helper.exs.bak
+
+# Editor / tooling
+.elixir_ls/
+.elixir-tools/
+.vscode/
+.idea/
+*.beam
+*.swp
+.DS_Store
