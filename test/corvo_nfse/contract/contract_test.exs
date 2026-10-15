@@ -8,14 +8,17 @@ defmodule CorvoNfse.ContractTest do
 
   use ExUnit.Case, async: false
 
+  alias CorvoNfse.Resources.Companies
+  alias CorvoNfse.Resources.Health
+
   @moduletag :contract
 
   test "reads health and a company page" do
     client = CorvoNfse.new([])
 
-    assert {:ok, %{"status" => "ok"}} = CorvoNfse.Resources.Health.live(client)
+    assert {:ok, %{"status" => "ok"}} = Health.live(client)
 
-    assert {:ok, page} = CorvoNfse.Resources.Companies.list(client, limit: 1)
+    assert {:ok, page} = Companies.list(client, limit: 1)
     assert page.pagination["limit"] == 1
     assert is_list(page.data)
   end

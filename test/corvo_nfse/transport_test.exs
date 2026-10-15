@@ -5,7 +5,7 @@ defmodule CorvoNfse.TransportTest do
   import CorvoNfse.TestHelpers
 
   alias CorvoNfse.Error
-  alias CorvoNfse.Resources.{Companies, Invoices}
+  alias CorvoNfse.Resources.{Companies, Health, Invoices}
 
   setup :verify_on_exit!
 
@@ -132,7 +132,7 @@ defmodule CorvoNfse.TransportTest do
       expect_request(json_response(%{"status" => "ok"}))
 
       assert {:ok, %{"status" => "ok"}} =
-               CorvoNfse.Resources.Health.live(client())
+               Health.live(client())
     end
 
     test "204 and empty bodies return nil" do

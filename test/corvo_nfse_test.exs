@@ -1,6 +1,8 @@
 defmodule CorvoNfseTest do
   use ExUnit.Case, async: true
 
+  alias CorvoNfse.Types.Webhook
+
   test "exposes the package version" do
     assert CorvoNfse.version() == "0.1.0"
   end
@@ -13,11 +15,17 @@ defmodule CorvoNfseTest do
   end
 
   test "webhook events are the canonical 9" do
-    events = CorvoNfse.Types.Webhook.events()
+    events = Webhook.events()
 
+    assert is_list(events)
     assert length(events) == 9
+    assert Enum.all?(events, &is_binary/1)
     assert "webhook.test" in events
     assert "nfse.invoice.authorized" in events
+
+    # function_exported?/3 returns false for modules that are compiled but not
+    # yet loaded, so load it explicitly instead of relying on test order.
+    Code.ensure_loaded!(CorvoNfse.Webhooks)
     assert function_exported?(CorvoNfse.Webhooks, :verify_signature, 3)
   end
 
