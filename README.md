@@ -8,7 +8,7 @@ Elixir SDK for the [Corvo](https://corvo.tech) NFS-e API. Register companies, ca
 - **Webhook verification in one call.** HMAC-SHA256 against the raw body, constant-time.
 - The wire format is passed through unchanged: responses are plain maps with string keys, exactly as the server sent them. Library only, no CLI.
 
-Full API reference: <https://corvo.tech/en/api-docs>.
+Full API reference: <https://corvo.tech/en/docs>.
 
 ## Installation
 
