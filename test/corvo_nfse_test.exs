@@ -4,7 +4,7 @@ defmodule CorvoNfseTest do
   alias CorvoNfse.Types.Webhook
 
   test "exposes the package version" do
-    assert CorvoNfse.version() == "0.1.0"
+    assert CorvoNfse.version() == "0.1.1"
   end
 
   test "new/1 builds a configured client" do
@@ -20,7 +20,8 @@ defmodule CorvoNfseTest do
     assert is_list(events)
     assert length(events) == 9
     assert Enum.all?(events, &is_binary/1)
-    assert "webhook.test" in events
+    assert "nfse.invoice.fiscal_discrepancy" in events
+    refute "webhook.test" in events
     assert "nfse.invoice.authorized" in events
 
     # function_exported?/3 returns false for modules that are compiled but not
@@ -47,6 +48,7 @@ defmodule CorvoNfseTest do
 
     assert public_functions(CorvoNfse.Resources.Invoices) ==
              [
+               calculate: 2,
                create: 2,
                create: 3,
                download_url: 3,
@@ -81,6 +83,7 @@ defmodule CorvoNfseTest do
              ]
 
     assert public_functions(CorvoNfse.Resources.Billing) == [plan: 1, usage: 1]
+    assert public_functions(CorvoNfse.Resources.Plans) == [get: 2, list: 1, list: 2, quote: 2]
     assert public_functions(CorvoNfse.Resources.Health) == [live: 1, ready: 1]
   end
 

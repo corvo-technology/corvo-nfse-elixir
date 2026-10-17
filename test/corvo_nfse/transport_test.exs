@@ -66,7 +66,12 @@ defmodule CorvoNfse.TransportTest do
       request = assert_request()
       assert request.method == :post
       assert {"content-type", "application/json"} in request.headers
-      assert Jason.decode!(request.body) == %{"legalName" => "Acme Ltda", "tradeName" => "Acme", "simpleNational" => true}
+
+      assert Jason.decode!(request.body) == %{
+               "legalName" => "Acme Ltda",
+               "tradeName" => "Acme",
+               "simpleNational" => true
+             }
     end
 
     test "uses PATCH for updates" do
@@ -116,18 +121,6 @@ defmodule CorvoNfse.TransportTest do
       assert {:ok, nil} = Companies.get(client(), "comp_1")
     end
 
-    test ":data_props unwraps data.props" do
-      expect_request(json_response(%{"data" => %{"props" => %{"id" => "inv_1"}}}))
-
-      assert {:ok, %{"id" => "inv_1"}} = Invoices.get(client(), "inv_1")
-    end
-
-    test ":data_props yields nil when props is absent" do
-      expect_request(json_response(%{"data" => %{"id" => "inv_1"}}))
-
-      assert {:ok, nil} = Invoices.get(client(), "inv_1")
-    end
-
     test ":none returns the parsed body as-is" do
       expect_request(json_response(%{"status" => "ok"}))
 
@@ -152,7 +145,9 @@ defmodule CorvoNfse.TransportTest do
             "statusCode" => 400,
             "code" => "ERROR_VALIDATION",
             "message" => "Validation failed",
-            "details" => [%{"field" => "amount", "code" => "too_small", "message" => "must be > 0"}],
+            "details" => [
+              %{"field" => "amount", "code" => "too_small", "message" => "must be > 0"}
+            ],
             "requestId" => "req_42"
           },
           status: 400
@@ -172,10 +167,13 @@ defmodule CorvoNfse.TransportTest do
 
     test "falls back to http_<status> with the X-Request-Id header" do
       expect_request(
-        json_response(%{"error" => "Gone"}, status: 410, headers: [
-          {"content-type", "application/json"},
-          {"x-request-id", "req_hdr"}
-        ])
+        json_response(%{"error" => "Gone"},
+          status: 410,
+          headers: [
+            {"content-type", "application/json"},
+            {"x-request-id", "req_hdr"}
+          ]
+        )
       )
 
       assert {:error, error} = Companies.get(client(), "comp_1")
@@ -207,7 +205,8 @@ defmodule CorvoNfse.TransportTest do
 
     test "reads Retry-After from the header when the body omits retryAfter" do
       expect_request(
-        json_response(%{"code" => "rate_limited", "message" => "slow down"}, status: 429,
+        json_response(%{"code" => "rate_limited", "message" => "slow down"},
+          status: 429,
           headers: [
             {"content-type", "application/json"},
             {"retry-after", "30"}
@@ -229,9 +228,12 @@ defmodule CorvoNfse.TransportTest do
     end
 
     test "reports invalid_json for unparsable success bodies" do
-      expect_request({:ok, %{status: 200, headers: [{"content-type", "application/json"}], body: "{oops"}})
+      expect_request(
+        {:ok, %{status: 200, headers: [{"content-type", "application/json"}], body: "{oops"}}
+      )
 
-      assert {:error, %Error{status: 200, code: "invalid_json", message: "Invalid JSON in response"}} =
+      assert {:error,
+              %Error{status: 200, code: "invalid_json", message: "Invalid JSON in response"}} =
                Companies.get(client(), "comp_1")
     end
 
@@ -287,10 +289,10 @@ defmodule CorvoNfse.TransportTest do
       assert request.url == @base <> "/v1/companies?limit=2"
     end
 
-    test "extracts props from each item for invoice-like endpoints" do
+    test "returns the items of a list page" do
       expect_request(
         json_response(%{
-          "data" => [%{"props" => %{"id" => "inv_1"}}, %{"props" => %{"id" => "inv_2"}}],
+          "data" => [%{"id" => "inv_1"}, %{"id" => "inv_2"}],
           "pagination" => %{"limit" => 2, "hasMore" => false, "nextCursor" => nil}
         })
       )
@@ -364,7 +366,10 @@ defmodule CorvoNfse.TransportTest do
 
     test "yields nothing for an empty first page" do
       expect_request(
-        json_response(%{"data" => [], "pagination" => %{"limit" => 10, "hasMore" => false, "nextCursor" => nil}})
+        json_response(%{
+          "data" => [],
+          "pagination" => %{"limit" => 10, "hasMore" => false, "nextCursor" => nil}
+        })
       )
 
       assert {:ok, stream} = Companies.iterate(client())

@@ -1,6 +1,7 @@
 defmodule CorvoNfse.Types.Company do
   @moduledoc """
-  Wire shape of a fiscal company (24 fields).
+  Wire shape of a fiscal company. Optional fields are absent from the JSON when
+  unset.
 
   Responses come back as plain maps with these string keys, passed through
   unchanged from the server.
@@ -19,7 +20,9 @@ defmodule CorvoNfse.Types.Company do
     :tradeName,
     :taxId,
     :municipalReg,
+    :sendMunicipalReg,
     :municipalityCode,
+    :defaultServiceCode,
     :taxRegime,
     :simpleNational,
     :specialRegime,
@@ -46,23 +49,26 @@ defmodule CorvoNfse.Types.Company do
           tradeName: String.t() | nil,
           taxId: String.t(),
           municipalReg: String.t() | nil,
+          sendMunicipalReg: boolean() | nil,
           municipalityCode: String.t() | nil,
-          taxRegime: tax_regime(),
+          defaultServiceCode: String.t() | nil,
+          taxRegime: tax_regime() | nil,
           simpleNational: boolean(),
           specialRegime: String.t() | nil,
           addressStreet: String.t() | nil,
           addressNumber: String.t() | nil,
           addressComplement: String.t() | nil,
           addressDistrict: String.t() | nil,
-          addressCity: String.t(),
-          addressState: String.t(),
-          addressZip: String.t(),
+          addressCity: String.t() | nil,
+          addressState: String.t() | nil,
+          addressZip: String.t() | nil,
           fiscalSchemaVersion: String.t(),
           environment: environment(),
           status: String.t(),
           createdAt: String.t(),
           updatedAt: String.t(),
           deletedAt: String.t() | nil,
+          # pending setup: "municipality_code", "certificate"
           setupGaps: [String.t()]
         }
 
@@ -70,9 +76,11 @@ defmodule CorvoNfse.Types.Company do
   Params for `CorvoNfse.Resources.Companies.create/2`. Wire keys (camelCase),
   passed through unchanged; string keys or camelCase atom keys are accepted:
 
-    * `legalName` (required), `taxId` (required), `taxRegime` (required)
-    * `tradeName`, `municipalReg`, `municipalityCode`, `simpleNational`,
-      `specialRegime`, `address` (optional)
+    * `legalName`, `taxId` (CNPJ), `taxRegime`, `municipalityCode` (IBGE, 7
+      digits) - required
+    * `tradeName`, `municipalReg`, `sendMunicipalReg` (default `false`),
+      `defaultServiceCode` (6 digits), `simpleNational`, `specialRegime`,
+      `address` - optional
   """
   @type create_params :: map()
 
@@ -84,8 +92,8 @@ defmodule CorvoNfse.Types.Company do
 
   @typedoc """
   Nested address object for create/update params: a plain JSON string-keyed
-  map. Required keys: `street`, `district`, `city`, `state`, `zip`.
-  Optional keys: `number`, `complement`.
+  map. Every key is optional: `street`, `number`, `complement`, `district`,
+  `city`, `state` (UF) and `zip` (8 digits).
   """
   @type address_input :: %{optional(String.t()) => term()}
 end

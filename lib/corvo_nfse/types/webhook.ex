@@ -13,7 +13,7 @@ defmodule CorvoNfse.Types.Webhook do
     "nfse.invoice.documents_ready",
     "nfse.invoice.email_sent",
     "nfse.invoice.email_failed",
-    "webhook.test"
+    "nfse.invoice.fiscal_discrepancy"
   ]
 
   @typedoc """
@@ -21,7 +21,9 @@ defmodule CorvoNfse.Types.Webhook do
   `nfse.invoice.authorized`, `nfse.invoice.rejected`, `nfse.invoice.failed`,
   `nfse.invoice.reconciliation_required`, `nfse.invoice.manual_review`,
   `nfse.invoice.documents_ready`, `nfse.invoice.email_sent`,
-  `nfse.invoice.email_failed`, `webhook.test`.
+  `nfse.invoice.email_failed`, `nfse.invoice.fiscal_discrepancy`. The
+  `webhook.test` event is only sent by `Webhooks.test/2` and cannot be
+  subscribed.
   """
   @type event :: String.t()
 
