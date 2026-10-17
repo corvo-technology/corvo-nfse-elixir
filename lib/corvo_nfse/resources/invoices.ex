@@ -3,9 +3,8 @@ defmodule CorvoNfse.Resources.Invoices do
   NFS-e invoice lifecycle: create, read, list, iterate, events, downloads and
   email.
 
-  Invoice entities are serialized as `{props: {...}}` inside the `data`
-  envelope; this module unwraps both layers, so `{:ok, invoice}` is the invoice
-  map itself (camelCase wire keys, unchanged).
+  Resources come straight in the response `data`, so `{:ok, invoice}` is the
+  invoice map itself (camelCase wire keys, unchanged).
   """
 
   alias CorvoNfse.{Client, Error, Transport}
@@ -36,15 +35,27 @@ defmodule CorvoNfse.Resources.Invoices do
   def create(client, params, opts \\ []) when is_map(params) do
     Transport.request(client, :post, "/invoices",
       json: params,
-      idempotency_key: Keyword.get(opts, :idempotency_key),
-      unwrap: :data_props
+      idempotency_key: Keyword.get(opts, :idempotency_key)
     )
+  end
+
+  @doc """
+  Estimates the taxes of an invoice without issuing, storing or charging
+  anything (`POST /v1/invoices/calculate`).
+
+  Takes the same params as `create/3`. A fiscal gap is not an error: the
+  result has `"status" => "blocked"` with `"blocking"` and `"pendingFields"`.
+  Money values are decimal strings.
+  """
+  @spec calculate(Client.t(), Invoice.create_params()) :: {:ok, map()} | {:error, Error.t()}
+  def calculate(client, params) when is_map(params) do
+    Transport.request(client, :post, "/invoices/calculate", json: params)
   end
 
   @doc "Reads an invoice (`GET /v1/invoices/:id`)."
   @spec get(Client.t(), String.t()) :: {:ok, map()} | {:error, Error.t()}
   def get(client, id) do
-    Transport.request(client, :get, "/invoices/#{Transport.segment(id)}", unwrap: :data_props)
+    Transport.request(client, :get, "/invoices/#{Transport.segment(id)}")
   end
 
   @doc """
@@ -55,7 +66,7 @@ defmodule CorvoNfse.Resources.Invoices do
   """
   @spec list(Client.t(), [list_option()]) :: {:ok, Common.page()} | {:error, Error.t()}
   def list(client, opts \\ []) do
-    Transport.list(client, "/invoices", list_query(opts), :props)
+    Transport.list(client, "/invoices", list_query(opts), :raw)
   end
 
   @doc """
@@ -67,7 +78,7 @@ defmodule CorvoNfse.Resources.Invoices do
   """
   @spec iterate(Client.t(), [list_option()]) :: {:ok, Enumerable.t()} | {:error, Error.t()}
   def iterate(client, opts \\ []) do
-    Transport.paginate(client, "/invoices", list_query(opts), :props)
+    Transport.paginate(client, "/invoices", list_query(opts), :raw)
   end
 
   @doc "Lists an invoice's events (`GET /v1/invoices/:id/events`)."
@@ -75,7 +86,7 @@ defmodule CorvoNfse.Resources.Invoices do
   def events(client, id, opts \\ []) do
     query = [limit: Keyword.get(opts, :limit), cursor: Keyword.get(opts, :cursor)]
 
-    Transport.list(client, "/invoices/#{Transport.segment(id)}/events", query, :props)
+    Transport.list(client, "/invoices/#{Transport.segment(id)}/events", query, :raw)
   end
 
   @doc "Downloads the invoice PDF (`GET /v1/invoices/:id/pdf`) as raw bytes."

@@ -2,8 +2,7 @@ defmodule CorvoNfse.Types.Credits do
   @moduledoc """
   Wire shapes of the credit balance, purchasable plans and the credit ledger.
 
-  Plans and history entries are serialized as `{props: {...}}` inside the
-  `data` envelope; the SDK unwraps both layers.
+  Responses come back as plain maps with these string keys.
   """
 
   defmodule Balance do
@@ -28,6 +27,7 @@ defmodule CorvoNfse.Types.Credits do
       :slug,
       :name,
       :description,
+      :monthlyCreditAllowance,
       :dailyLimit,
       :maxActiveCompanies,
       :creditUnitPriceCents,
@@ -47,7 +47,8 @@ defmodule CorvoNfse.Types.Credits do
             slug: String.t(),
             name: String.t(),
             description: String.t(),
-            dailyLimit: integer(),
+            monthlyCreditAllowance: integer(),
+            dailyLimit: integer() | nil,
             maxActiveCompanies: integer(),
             creditUnitPriceCents: integer(),
             throughputRps: integer(),
@@ -63,36 +64,72 @@ defmodule CorvoNfse.Types.Credits do
   end
 
   defmodule Transaction do
-    @moduledoc "Wire shape of an entry of `GET /credits/history`."
+    @moduledoc """
+    Wire shape of an entry of `GET /credits/history`. `amount` is in credits
+    (not BRL); fields ending in `Cents` are in centavos.
+    """
 
     defstruct [
       :id,
+      :tenantId,
       :type,
       :amount,
-      :creditDelta,
-      :balanceAfter,
-      :environment,
+      :description,
       :source,
-      :referenceType,
-      :referenceId,
+      :amountBrlCents,
+      :unitPriceCentsApplied,
+      :planIdSnapshot,
+      :reservedInvoiceId,
+      :periodId,
+      :isReservation,
+      :relatedTransactionId,
       :createdAt
     ]
 
     @type t :: %__MODULE__{
             id: String.t(),
+            tenantId: String.t(),
             type: String.t(),
-            amount: integer(),
-            creditDelta: integer(),
-            balanceAfter: integer(),
-            environment: CorvoNfse.Types.Common.environment(),
-            source: String.t(),
-            referenceType: String.t() | nil,
-            referenceId: String.t() | nil,
+            amount: number(),
+            description: String.t() | nil,
+            source: String.t() | nil,
+            amountBrlCents: integer() | nil,
+            unitPriceCentsApplied: integer() | nil,
+            planIdSnapshot: String.t() | nil,
+            reservedInvoiceId: String.t() | nil,
+            periodId: String.t() | nil,
+            isReservation: boolean() | nil,
+            relatedTransactionId: String.t() | nil,
             createdAt: String.t()
+          }
+  end
+
+  defmodule PlanQuote do
+    @moduledoc "Wire shape of an entry of the public catalog (`GET /plans`); prices in centavos."
+
+    defstruct [
+      :slug,
+      :name,
+      :monthlyAllowance,
+      :basePriceCents,
+      :perCreditOverageCents,
+      :monthlyTotalCents,
+      :currency
+    ]
+
+    @type t :: %__MODULE__{
+            slug: String.t(),
+            name: String.t(),
+            monthlyAllowance: integer(),
+            basePriceCents: integer(),
+            perCreditOverageCents: integer(),
+            monthlyTotalCents: integer(),
+            currency: String.t()
           }
   end
 
   @type balance :: Balance.t()
   @type plan :: Plan.t()
   @type transaction :: Transaction.t()
+  @type plan_quote :: PlanQuote.t()
 end

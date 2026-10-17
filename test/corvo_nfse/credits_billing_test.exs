@@ -30,10 +30,10 @@ defmodule CorvoNfse.CreditsBillingTest do
     assert request.url == @base <> "/credits"
   end
 
-  test "plans unwraps props from each item" do
+  test "plans returns the items of the page" do
     expect_request(
       json_response(%{
-        "data" => [%{"props" => %{"id" => "plan_1", "slug" => "scale"}}],
+        "data" => [%{"id" => "plan_1", "slug" => "scale"}],
         "pagination" => %{"limit" => 1, "hasMore" => false, "nextCursor" => nil}
       })
     )
@@ -48,7 +48,7 @@ defmodule CorvoNfse.CreditsBillingTest do
   test "history and iterate_history walk /credits/history" do
     expect_request(
       json_response(%{
-        "data" => [%{"props" => %{"id" => "txn_1"}}],
+        "data" => [%{"id" => "txn_1"}],
         "pagination" => %{"limit" => 1, "hasMore" => true, "nextCursor" => "Y3VyMg"}
       })
     )
@@ -60,7 +60,7 @@ defmodule CorvoNfse.CreditsBillingTest do
 
     expect_request(
       json_response(%{
-        "data" => [%{"props" => %{"id" => "txn_2"}}],
+        "data" => [%{"id" => "txn_2"}],
         "pagination" => %{"limit" => 1, "hasMore" => false, "nextCursor" => nil}
       })
     )

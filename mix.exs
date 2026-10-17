@@ -1,7 +1,7 @@
 defmodule CorvoNfse.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.1.1"
   @source_url "https://github.com/corvo-technology/corvo-nfse-elixir"
 
   def project do
@@ -35,8 +35,8 @@ defmodule CorvoNfse.MixProject do
   defp elixirc_paths(_), do: ["lib"]
 
   defp description do
-    "Official Elixir SDK for the Corvo NFS-e API: 28 API-key operations plus public " <>
-      "health checks, cursor pagination, result-style errors and webhook signature verification."
+    "Elixir SDK for the Corvo NFS-e API: issue Brazilian service invoices, calculate taxes, " <>
+      "cursor pagination, result-style errors and webhook signature verification."
   end
 
   defp deps do
@@ -53,7 +53,10 @@ defmodule CorvoNfse.MixProject do
   defp package do
     [
       licenses: ["MIT"],
-      links: %{"GitHub" => @source_url},
+      links: %{
+        "GitHub" => @source_url,
+        "Docs" => "https://corvo.tech/en/api-docs"
+      },
       files: ~w(lib mix.exs README.md LICENSE CHANGELOG.md .formatter.exs)
     ]
   end
