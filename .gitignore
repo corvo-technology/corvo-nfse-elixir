@@ -21,3 +21,6 @@ test/test_helper.exs.bak
 *.beam
 *.swp
 .DS_Store
+
+# Test scratch
+tmp/

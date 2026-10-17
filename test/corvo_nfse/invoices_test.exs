@@ -10,8 +10,8 @@ defmodule CorvoNfse.InvoicesTest do
 
   @base "http://localhost:4000/v1"
 
-  test "create unwraps data.props and sends the wire body unchanged" do
-    expect_request(json_response(%{"data" => %{"props" => %{"id" => "inv_1", "status" => "queued"}}}))
+  test "create returns the invoice and sends the wire body unchanged" do
+    expect_request(json_response(%{"data" => %{"id" => "inv_1", "status" => "queued"}}))
 
     assert {:ok, %{"id" => "inv_1", "status" => "queued"}} =
              Invoices.create(client(), invoice_params(), idempotency_key: "idem_1")
@@ -41,13 +41,15 @@ defmodule CorvoNfse.InvoicesTest do
              )
 
     request = assert_request()
-    assert request.url == @base <> "/invoices?companyId=comp_1&status=authorized&externalId=ext_9&limit=5"
+
+    assert request.url ==
+             @base <> "/invoices?companyId=comp_1&status=authorized&externalId=ext_9&limit=5"
   end
 
-  test "events lives under the invoice path and unwraps props" do
+  test "events lives under the invoice path" do
     expect_request(
       json_response(%{
-        "data" => [%{"props" => %{"id" => "evt_1"}}],
+        "data" => [%{"id" => "evt_1"}],
         "pagination" => %{"limit" => 1, "hasMore" => false, "nextCursor" => nil}
       })
     )
@@ -68,9 +70,7 @@ defmodule CorvoNfse.InvoicesTest do
     request = assert_request()
     assert request.url == @base <> "/invoices/inv_1/pdf"
 
-    expect_request(
-      {:ok, %{status: 200, headers: [{"content-type", "text/xml"}], body: "<DPS/>"}}
-    )
+    expect_request({:ok, %{status: 200, headers: [{"content-type", "text/xml"}], body: "<DPS/>"}})
 
     assert {:ok, %{body: "<DPS/>"}} = Invoices.xml(client(), "inv_1")
     request = assert_request()
@@ -99,10 +99,10 @@ defmodule CorvoNfse.InvoicesTest do
     assert request.body == nil
   end
 
-  test "iterate streams invoices with props unwrapped" do
+  test "iterate streams the invoices" do
     expect_requests([
       json_response(%{
-        "data" => [%{"props" => %{"id" => "inv_1"}}],
+        "data" => [%{"id" => "inv_1"}],
         "pagination" => %{"limit" => 1, "hasMore" => false, "nextCursor" => nil}
       })
     ])

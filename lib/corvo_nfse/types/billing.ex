@@ -45,7 +45,8 @@ defmodule CorvoNfse.Types.Billing do
       :activeCompanies,
       :maxActiveCompanies,
       :periodStart,
-      :periodEnd
+      :periodEnd,
+      :reason
     ]
 
     @type t :: %__MODULE__{
@@ -59,7 +60,10 @@ defmodule CorvoNfse.Types.Billing do
             activeCompanies: integer(),
             maxActiveCompanies: integer(),
             periodStart: String.t() | nil,
-            periodEnd: String.t() | nil
+            periodEnd: String.t() | nil,
+            # set when canEmit is false: no_credits, daily_limit_exceeded,
+            # company_limit_exceeded or plan_blocked
+            reason: String.t() | nil
           }
   end
 

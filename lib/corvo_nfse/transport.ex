@@ -15,8 +15,6 @@ defmodule CorvoNfse.Transport do
 
     * `:data` (default) - `{data: X}` returns `X`; anything else returns
       `nil`. A `204` or empty body returns `nil`.
-    * `:data_props` - like `:data`, then returns `data.props` if `data` is an
-      object with `props`, otherwise `nil` (used by invoice endpoints).
     * `:none` - the parsed body as-is (used by the health endpoints).
 
   ## Pagination
@@ -28,8 +26,8 @@ defmodule CorvoNfse.Transport do
 
   alias CorvoNfse.{Client, Error}
 
-  @type unwrap :: :data | :data_props | :none
-  @type item_mode :: :raw | :props
+  @type unwrap :: :data | :none
+  @type item_mode :: :raw
   @type option ::
           {:json, map() | list() | nil}
           | {:raw_body, iodata() | nil}
@@ -51,7 +49,7 @@ defmodule CorvoNfse.Transport do
     * `:query` - map or keyword list of query parameters; `nil` values are
       skipped.
     * `:idempotency_key` - sent as `Idempotency-Key`.
-    * `:unwrap` - `:data` (default), `:data_props` or `:none`.
+    * `:unwrap` - `:data` (default) or `:none`.
   """
   @spec request(Client.t(), :get | :post | :patch | :delete, String.t(), [option()]) ::
           {:ok, term()} | {:error, Error.t()}
@@ -91,11 +89,7 @@ defmodule CorvoNfse.Transport do
   @doc """
   Fetches a single page of a list endpoint.
 
-  Items are mapped according to `item_mode`:
-
-    * `:raw` - items passed through unchanged.
-    * `:props` - each item's `props` object is extracted (invoice endpoints
-      serialize entities as `{props: {...}}`).
+  Items are passed through unchanged (`item_mode` is `:raw`).
   """
   @spec list(Client.t(), String.t(), map() | keyword() | nil, item_mode()) ::
           {:ok, page()} | {:error, Error.t()}
@@ -222,7 +216,10 @@ defmodule CorvoNfse.Transport do
     headers =
       cond do
         Keyword.has_key?(opts, :raw_body) ->
-          [{"content-type", Keyword.get(opts, :content_type, "application/octet-stream")} | headers]
+          [
+            {"content-type", Keyword.get(opts, :content_type, "application/octet-stream")}
+            | headers
+          ]
 
         is_map(Keyword.get(opts, :json)) or is_list(Keyword.get(opts, :json)) ->
           [{"content-type", "application/json"} | headers]
@@ -280,13 +277,6 @@ defmodule CorvoNfse.Transport do
   defp unwrap(parsed, :none), do: parsed
   defp unwrap(parsed, :data), do: envelope_data(parsed)
 
-  defp unwrap(parsed, :data_props) do
-    case envelope_data(parsed) do
-      data when is_map(data) -> Map.get(data, "props")
-      _other -> nil
-    end
-  end
-
   defp envelope_data(parsed) when is_map(parsed), do: Map.get(parsed, "data")
   defp envelope_data(_parsed), do: nil
 
@@ -303,8 +293,6 @@ defmodule CorvoNfse.Transport do
   defp page(_body, _item_mode), do: %{data: [], pagination: nil}
 
   defp map_item(item, :raw), do: item
-  defp map_item(item, :props) when is_map(item), do: Map.get(item, "props")
-  defp map_item(_item, :props), do: nil
 
   defp more?(pagination) when is_map(pagination) do
     Map.get(pagination, "hasMore") == true and is_binary(Map.get(pagination, "nextCursor"))

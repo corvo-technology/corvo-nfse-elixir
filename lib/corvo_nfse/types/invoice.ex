@@ -2,9 +2,7 @@ defmodule CorvoNfse.Types.Invoice do
   @moduledoc """
   Wire shape of an NFS-e invoice.
 
-  Invoice endpoints serialize entities as `{props: {...}}` inside the `data`
-  envelope; the SDK unwraps both layers and returns the invoice as a plain map
-  with these string keys.
+  The SDK returns the invoice as a plain map with these string keys.
   """
 
   @typedoc ~S(Environment wire value: "test" | "live".)
@@ -50,12 +48,15 @@ defmodule CorvoNfse.Types.Invoice do
     :lastErrorCode,
     :lastErrorMessage,
     :lastErrorProvider,
-    :lastErrorAt,
-    :retryCount,
-    :nextRetryAt,
-    :stage,
+    :documentsReadyAt,
+    :lastEmailStatus,
+    :lastEmailSentAt,
     :createdAt,
-    :updatedAt
+    :updatedAt,
+    :documentsStatus,
+    :emailStatus,
+    :stage,
+    :scheduledFor
   ]
 
   @type t :: %__MODULE__{
@@ -86,24 +87,32 @@ defmodule CorvoNfse.Types.Invoice do
           lastErrorCode: String.t() | nil,
           lastErrorMessage: String.t() | nil,
           lastErrorProvider: String.t() | nil,
-          lastErrorAt: String.t() | nil,
-          retryCount: integer(),
-          nextRetryAt: String.t() | nil,
-          stage: stage() | nil,
+          documentsReadyAt: String.t() | nil,
+          lastEmailStatus: String.t() | nil,
+          lastEmailSentAt: String.t() | nil,
           createdAt: String.t(),
-          updatedAt: String.t()
+          updatedAt: String.t(),
+          documentsStatus: String.t(),
+          emailStatus: String.t() | nil,
+          stage: stage(),
+          scheduledFor: String.t() | nil
         }
 
   @typedoc """
-  Params for `CorvoNfse.Resources.Invoices.create/3` (camelCase wire keys,
-  passed through unchanged):
+  Params for `CorvoNfse.Resources.Invoices.create/3` and `calculate/2`
+  (camelCase wire keys, passed through unchanged):
 
-    * `customer` (required) - `%{name:, taxId:, email?:, address?:}`
-    * `service` (required) - `%{code:, municipalityCode?:, description?:}`
-    * `amount` (required) - number
+    * `companyId` or `companyTaxId` (CNPJ) - the issuing company
+    * `service` (required) - `%{code?:, municipalityCode?:, description?:}`;
+      `code` (6 digits) defaults to the company's, then to `100901`
+    * `amount` (required) - BRL, positive, up to 2 decimal places
     * `competenceDate` (required) - `YYYY-MM-DD`
-    * `companyId`, `companyTaxId`, `externalId`, `correlationId`, `email`,
-      `options` (optional)
+    * `customer` (optional) - `%{taxId:, name?:, email?:, address?:}`; when
+      sent, `taxId` (CPF or CNPJ) is required
+    * `discount` (optional) - unconditional discount, from 0 up to `amount`
+    * `email` (optional) - boolean; `options.email.send` wins when set
+    * `options` (optional) - `%{email?: %{send: boolean}, type?: "IMMEDIATE" | "SCHEDULE"}`
+    * `externalId` (optional)
   """
   @type create_params :: map()
 
