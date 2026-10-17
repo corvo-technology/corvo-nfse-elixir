@@ -55,7 +55,7 @@ defmodule CorvoNfse.MixProject do
       licenses: ["MIT"],
       links: %{
         "GitHub" => @source_url,
-        "Docs" => "https://corvo.tech/en/api-docs"
+        "Docs" => "https://corvo.tech/en/docs"
       },
       files: ~w(lib mix.exs README.md LICENSE CHANGELOG.md .formatter.exs)
     ]
