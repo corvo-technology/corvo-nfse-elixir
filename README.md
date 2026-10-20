@@ -88,6 +88,38 @@ Issuing is asynchronous: a successful call means the request was accepted, not t
 
 Use `"options" => %{"type" => "SCHEDULE"}` with a future `competenceDate` to schedule the issuance.
 
+### Cancel an invoice
+
+`Invoices.cancel/3` sends `POST /v1/invoices/:id/cancel` and returns the updated invoice, like `get/2`. The `reason` is `:issue_error`, `:service_not_provided` or `:other` (atoms or the same strings). The `description` is required (15 to 255 characters) for an `authorized` or `processing` invoice and optional for a `queued` one.
+
+```elixir
+{:ok, invoice} =
+  CorvoNfse.Resources.Invoices.cancel(client, "inv_1", %{
+    reason: :issue_error,
+    description: "Wrong amount on the invoice"
+  })
+
+# "cancelled"  - a queued invoice is cancelled at once (200)
+# "cancelling" - the cancellation is being processed at the Sefin (202)
+# "processing" - still being issued; cancellationRequestedAt is set and it is
+#                cancelled once authorized (202)
+invoice["status"]
+```
+
+Cancelling an authorized NFS-e is asynchronous. Check the result later with `get/2` (or the `nfse.invoice.cancelled` and `nfse.invoice.cancellation_rejected` webhooks):
+
+```elixir
+case CorvoNfse.Resources.Invoices.get(client, "inv_1") do
+  {:ok, %{"status" => "cancelled", "cancelledAt" => cancelled_at}} -> {:cancelled, cancelled_at}
+  {:ok, %{"status" => "cancelling"}} -> :in_progress
+  # The Sefin rejected the cancellation: the invoice is back to authorized.
+  {:ok, %{"status" => "authorized", "lastErrorCode" => code, "lastErrorMessage" => message}} ->
+    {:rejected, code, message}
+end
+```
+
+Invoices in `retry_pending`, `reconciliation_required` or `manual_review` cannot be cancelled: the call returns `{:error, %CorvoNfse.Error{status: 409, code: "ERROR_INVOICE_NOT_CANCELLABLE"}}`. An invalid description returns a `422`. Repeating the request returns the current state (the first request wins). Cancelling an issued NFS-e does not refund the credit.
+
 ### Handling errors
 
 ```elixir
@@ -136,7 +168,7 @@ if CorvoNfse.Webhooks.verify_signature(raw_body, signature, secret) do
 end
 ```
 
-`CorvoNfse.Types.Webhook.events/0` lists the 9 events you can subscribe to. The `webhook.test` event is only sent by `Webhooks.test/2`.
+`CorvoNfse.Types.Webhook.events/0` lists the 11 events you can subscribe to. The `webhook.test` event is only sent by `Webhooks.test/2`.
 
 ## Resources
 
@@ -144,7 +176,7 @@ end
 |---|---|
 | `CorvoNfse.Resources.Companies` | `create`, `list`, `iterate`, `get`, `update`, `remove` |
 | `CorvoNfse.Resources.Certificates` | `upload`, `list`, `remove` |
-| `CorvoNfse.Resources.Invoices` | `create`, `calculate`, `get`, `list`, `iterate`, `events`, `pdf`, `xml`, `download_url`, `send_email` |
+| `CorvoNfse.Resources.Invoices` | `create`, `calculate`, `get`, `list`, `iterate`, `events`, `pdf`, `xml`, `download_url`, `send_email`, `cancel` |
 | `CorvoNfse.Resources.Webhooks` | `list`, `create`, `remove`, `test` |
 | `CorvoNfse.Resources.Webhooks.Deliveries` | `list`, `iterate`, `stats`, `retry` |
 | `CorvoNfse.Resources.Credits` | `balance`, `plans`, `history`, `iterate_history` |

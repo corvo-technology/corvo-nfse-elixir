@@ -2,6 +2,19 @@
 
 All notable changes to `corvo_nfse` are documented here.
 
+## Unreleased (NFS-e cancellation)
+
+### Added
+
+- `Invoices.cancel/3` (`POST /v1/invoices/:id/cancel`) cancels an invoice with a `reason`
+  (`:issue_error`, `:service_not_provided` or `:other`) and an optional `description`, and returns
+  the updated invoice. A `409 ERROR_INVOICE_NOT_CANCELLABLE` or a `422` comes back as
+  `{:error, %CorvoNfse.Error{}}`.
+- Invoice statuses `cancelling` and `cancelled`, the `Types.Invoice.cancellation_reason` type and
+  the invoice fields `cancellationReason`, `cancellationDescription`, `cancelledAt` and
+  `cancellationRequestedAt`.
+- `Types.Webhook.events/0` lists `nfse.invoice.cancelled` and `nfse.invoice.cancellation_rejected`.
+
 ## 0.1.1
 
 ### Fixed
