@@ -11,9 +11,37 @@ defmodule CorvoNfse.Types.Invoice do
   @typedoc """
   Invoice status wire value: `"queued" | "processing" | "authorized" |
   "rejected" | "retry_pending" | "reconciliation_required" |
-  "manual_review" | "failed"`.
+  "manual_review" | "failed" | "cancelling" | "cancelled"`.
+
+  `"cancelling"` means the cancellation event is being processed at the Sefin;
+  `"cancelled"` means the invoice is cancelled (`cancelledAt` is set). When the
+  Sefin rejects a cancellation the invoice goes back to `"authorized"` with
+  `lastErrorCode`/`lastErrorMessage` set.
   """
   @type status :: String.t()
+
+  @typedoc """
+  Cancellation reason for `CorvoNfse.Resources.Invoices.cancel/3`:
+  `:issue_error | :service_not_provided | :other`, or the same values as
+  strings. Responses carry it as a string in `"cancellationReason"`.
+  """
+  @type cancellation_reason :: :issue_error | :service_not_provided | :other | String.t()
+
+  @typedoc """
+  Params for `CorvoNfse.Resources.Invoices.cancel/3` (atom or string keys,
+  sent unchanged):
+
+    * `reason` (required) - a `t:cancellation_reason/0`
+    * `description` (optional) - up to 255 characters; the API requires 15 to
+      255 characters to cancel an `authorized` or `processing` invoice and
+      accepts none for a `queued` one
+  """
+  @type cancel_params ::
+          %{
+            required(:reason) => cancellation_reason(),
+            optional(:description) => String.t()
+          }
+          | %{required(String.t()) => String.t()}
 
   @typedoc ~S(Stage wire value: "pending" | "authorized" | "documents_ready" | "completed" | "failed".)
   @type stage :: String.t()
@@ -56,7 +84,11 @@ defmodule CorvoNfse.Types.Invoice do
     :documentsStatus,
     :emailStatus,
     :stage,
-    :scheduledFor
+    :scheduledFor,
+    :cancellationReason,
+    :cancellationDescription,
+    :cancelledAt,
+    :cancellationRequestedAt
   ]
 
   @type t :: %__MODULE__{
@@ -95,7 +127,11 @@ defmodule CorvoNfse.Types.Invoice do
           documentsStatus: String.t(),
           emailStatus: String.t() | nil,
           stage: stage(),
-          scheduledFor: String.t() | nil
+          scheduledFor: String.t() | nil,
+          cancellationReason: String.t() | nil,
+          cancellationDescription: String.t() | nil,
+          cancelledAt: String.t() | nil,
+          cancellationRequestedAt: String.t() | nil
         }
 
   @typedoc """

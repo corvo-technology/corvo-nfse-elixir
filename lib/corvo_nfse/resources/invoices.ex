@@ -1,7 +1,7 @@
 defmodule CorvoNfse.Resources.Invoices do
   @moduledoc """
-  NFS-e invoice lifecycle: create, read, list, iterate, events, downloads and
-  email.
+  NFS-e invoice lifecycle: create, read, list, iterate, events, downloads,
+  email and cancellation.
 
   Resources come straight in the response `data`, so `{:ok, invoice}` is the
   invoice map itself (camelCase wire keys, unchanged).
@@ -127,6 +127,53 @@ defmodule CorvoNfse.Resources.Invoices do
     Transport.request(client, :post, "/invoices/#{Transport.segment(id)}/email",
       idempotency_key: Keyword.get(opts, :idempotency_key)
     )
+  end
+
+  @doc """
+  Cancels an invoice (`POST /v1/invoices/:id/cancel`).
+
+  `params` takes `reason` (required: `:issue_error`, `:service_not_provided`
+  or `:other`, or the same strings) and `description` (optional, up to 255
+  characters). The API requires a 15 to 255 character `description` to cancel
+  an `authorized` or `processing` invoice and accepts none for a `queued` one;
+  the SDK does not validate it.
+
+  `{:ok, invoice}` carries the updated invoice, like `get/2`:
+
+    * `200` - a queued invoice is cancelled at once: `"status" => "cancelled"`
+      with `"cancelledAt"` set.
+    * `202` - `"status" => "cancelling"` while the Sefin processes the
+      cancellation, or `"status" => "processing"` with
+      `"cancellationRequestedAt"` set when the invoice is still being issued.
+
+  Repeating the request returns the current state (the first request wins).
+  Follow the outcome with `get/2` (or the `nfse.invoice.cancelled` and
+  `nfse.invoice.cancellation_rejected` webhooks): `"cancelled"` is done,
+  `"cancelling"` is in progress, and a rejected cancellation goes back to
+  `"authorized"` with `"lastErrorCode"`/`"lastErrorMessage"` set.
+
+  An invoice in `retry_pending`, `reconciliation_required` or `manual_review`
+  returns `{:error, %CorvoNfse.Error{status: 409, code:
+  "ERROR_INVOICE_NOT_CANCELLABLE"}}`; an invalid description returns a `422`
+  error.
+
+  ## Example
+
+      {:ok, invoice} =
+        CorvoNfse.Resources.Invoices.cancel(client, "inv_1", %{
+          reason: :issue_error,
+          description: "Wrong amount on the invoice"
+        })
+
+      invoice["status"]
+      #=> "cancelling"
+
+      {:ok, %{"status" => "cancelled"}} = CorvoNfse.Resources.Invoices.get(client, "inv_1")
+  """
+  @spec cancel(Client.t(), String.t(), Invoice.cancel_params()) ::
+          {:ok, map()} | {:error, Error.t()}
+  def cancel(client, id, params) when is_map(params) do
+    Transport.request(client, :post, "/invoices/#{Transport.segment(id)}/cancel", json: params)
   end
 
   defp list_query(opts) do
