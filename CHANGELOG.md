@@ -21,6 +21,20 @@ All notable changes to `corvo_nfse` are documented here.
 
 ## Unreleased
 
+### Added
+
+- `Invoices.create_batch/2` (`POST /v1/invoices/batches`, 1 to 50 items, per-item `idempotencyKey`).
+- `Invoices.cancel/4` (`POST /v1/invoices/:id/cancel`), the `cancelling`/`cancelled` statuses and the
+  `cancellation*` fields on the invoice.
+- `deduction` on invoice params; `discount` and `deduction` on the invoice.
+- `simplesRate` and `simplesIssRate` on company params.
+- `Types.Webhook.events/0` lists 11 events (adds `nfse.invoice.cancelled` and
+  `nfse.invoice.cancellation_rejected`).
+
+### Changed
+
+- Only `MEI` and `Simples Nacional` are documented as tax regimes (the API rejects the others).
+
 ### Contract changes
 
 Cross-SDK contract changes (new/removed operations, envelope or error-code

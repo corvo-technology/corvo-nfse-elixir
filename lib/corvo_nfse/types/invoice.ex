@@ -11,7 +11,7 @@ defmodule CorvoNfse.Types.Invoice do
   @typedoc """
   Invoice status wire value: `"queued" | "processing" | "authorized" |
   "rejected" | "retry_pending" | "reconciliation_required" |
-  "manual_review" | "failed"`.
+  "manual_review" | "failed" | "cancelling" | "cancelled"`.
   """
   @type status :: String.t()
 
@@ -19,6 +19,9 @@ defmodule CorvoNfse.Types.Invoice do
   @type stage :: String.t()
 
   @type download_format :: :pdf | :xml | String.t()
+
+  @typedoc ~S(Cancellation reason wire value: "issue_error" | "service_not_provided" | "other".)
+  @type cancellation_reason :: String.t()
 
   defstruct [
     :id,
@@ -56,7 +59,13 @@ defmodule CorvoNfse.Types.Invoice do
     :documentsStatus,
     :emailStatus,
     :stage,
-    :scheduledFor
+    :scheduledFor,
+    :discount,
+    :deduction,
+    :cancellationReason,
+    :cancellationDescription,
+    :cancelledAt,
+    :cancellationRequestedAt
   ]
 
   @type t :: %__MODULE__{
@@ -95,7 +104,15 @@ defmodule CorvoNfse.Types.Invoice do
           documentsStatus: String.t(),
           emailStatus: String.t() | nil,
           stage: stage(),
-          scheduledFor: String.t() | nil
+          scheduledFor: String.t() | nil,
+          # set only when declared on the invoice (BRL)
+          discount: number() | nil,
+          deduction: number() | nil,
+          # nil until a cancellation is requested
+          cancellationReason: cancellation_reason() | nil,
+          cancellationDescription: String.t() | nil,
+          cancelledAt: String.t() | nil,
+          cancellationRequestedAt: String.t() | nil
         }
 
   @typedoc """
@@ -110,11 +127,30 @@ defmodule CorvoNfse.Types.Invoice do
     * `customer` (optional) - `%{taxId:, name?:, email?:, address?:}`; when
       sent, `taxId` (CPF or CNPJ) is required
     * `discount` (optional) - unconditional discount, from 0 up to `amount`
+    * `deduction` (optional) - ISS base deduction declared by the issuer, in
+      BRL: greater than 0 and less than `amount` minus `discount` (0 is the
+      same as omitting it). The invoice is still issued for the full `amount`;
+      the issuer is responsible for the declared value
     * `email` (optional) - boolean; `options.email.send` wins when set
     * `options` (optional) - `%{email?: %{send: boolean}, type?: "IMMEDIATE" | "SCHEDULE"}`
     * `externalId` (optional)
   """
   @type create_params :: map()
+
+  @typedoc """
+  One item of `CorvoNfse.Resources.Invoices.create_batch/2`: the keys of
+  `create_params` plus an optional `idempotencyKey` (up to 255 characters).
+  """
+  @type batch_item :: map()
+
+  @typedoc """
+  Result of `CorvoNfse.Resources.Invoices.create_batch/2`:
+  `%{"total" => integer, "accepted" => integer, "rejected" => integer,
+  "results" => [result]}`, one `result` per item in the order sent:
+  `%{"index" => 0, "status" => "accepted", "replayed" => true, "invoice" => invoice}`
+  or `%{"index" => 1, "status" => "rejected", "error" => %{"code" => ..., "message" => ..., "details" => ...}}`.
+  """
+  @type batch_summary :: map()
 
   @typedoc "Customer input for `create_params`."
   @type customer_input :: map()

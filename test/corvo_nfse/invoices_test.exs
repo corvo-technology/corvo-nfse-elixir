@@ -119,4 +119,84 @@ defmodule CorvoNfse.InvoicesTest do
       "competenceDate" => "2026-10-01"
     }
   end
+
+  test "create_batch posts the items without an Idempotency-Key header" do
+    expect_request(
+      json_response(
+        %{
+          "data" => %{
+            "total" => 2,
+            "accepted" => 1,
+            "rejected" => 1,
+            "results" => [
+              %{
+                "index" => 0,
+                "status" => "accepted",
+                "replayed" => true,
+                "invoice" => %{"id" => "inv_1"}
+              },
+              %{
+                "index" => 1,
+                "status" => "rejected",
+                "error" => %{
+                  "code" => "ERROR_VALIDATION",
+                  "message" => "Request validation failed"
+                }
+              }
+            ]
+          }
+        },
+        status: 202
+      )
+    )
+
+    item = %{
+      "companyTaxId" => "11222333000181",
+      "idempotencyKey" => "sheet-row-2",
+      "service" => %{"description" => "Consultoria"},
+      "amount" => 150.5,
+      "deduction" => 20,
+      "competenceDate" => "2026-10-01"
+    }
+
+    assert {:ok, %{"total" => 2, "results" => [first, second]}} =
+             Invoices.create_batch(client(), [item])
+
+    assert first["replayed"] == true
+    assert second["error"]["code"] == "ERROR_VALIDATION"
+
+    request = assert_request()
+    assert request.method == :post
+    assert request.url == @base <> "/invoices/batches"
+    refute Enum.any?(request.headers, fn {name, _} -> name == "idempotency-key" end)
+    assert Jason.decode!(request.body) == %{"invoices" => [item]}
+  end
+
+  test "cancel posts the reason and description" do
+    expect_request(
+      json_response(%{"data" => %{"id" => "inv_1", "status" => "cancelling"}}, status: 202)
+    )
+
+    assert {:ok, %{"status" => "cancelling"}} =
+             Invoices.cancel(client(), "inv_1", "issue_error",
+               description: "Wrong amount on the invoice"
+             )
+
+    request = assert_request()
+    assert request.method == :post
+    assert request.url == @base <> "/invoices/inv_1/cancel"
+
+    assert Jason.decode!(request.body) == %{
+             "reason" => "issue_error",
+             "description" => "Wrong amount on the invoice"
+           }
+  end
+
+  test "cancel omits the description when not given" do
+    expect_request(json_response(%{"data" => %{"id" => "inv_1", "status" => "cancelled"}}))
+
+    assert {:ok, %{"status" => "cancelled"}} = Invoices.cancel(client(), "inv_1", "other")
+
+    assert Jason.decode!(assert_request().body) == %{"reason" => "other"}
+  end
 end
