@@ -4,7 +4,7 @@ defmodule CorvoNfseTest do
   alias CorvoNfse.Types.Webhook
 
   test "exposes the package version" do
-    assert CorvoNfse.version() == "0.1.1"
+    assert CorvoNfse.version() == "0.2.0"
   end
 
   test "new/1 builds a configured client" do
