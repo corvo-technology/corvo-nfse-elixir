@@ -15,7 +15,7 @@ Full API reference: <https://corvo.tech/en/docs>.
 ```elixir
 def deps do
   [
-    {:corvo_nfse, "~> 0.1.1"}
+    {:corvo_nfse, "~> 0.2.0"}
   ]
 end
 ```
