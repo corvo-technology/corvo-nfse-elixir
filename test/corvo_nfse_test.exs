@@ -14,13 +14,15 @@ defmodule CorvoNfseTest do
     assert client.base_url == "https://api.corvo.tech"
   end
 
-  test "webhook events are the canonical 9" do
+  test "webhook events are the canonical 11" do
     events = Webhook.events()
 
     assert is_list(events)
-    assert length(events) == 9
+    assert length(events) == 11
     assert Enum.all?(events, &is_binary/1)
     assert "nfse.invoice.fiscal_discrepancy" in events
+    assert "nfse.invoice.cancelled" in events
+    assert "nfse.invoice.cancellation_rejected" in events
     refute "webhook.test" in events
     assert "nfse.invoice.authorized" in events
 
@@ -49,8 +51,11 @@ defmodule CorvoNfseTest do
     assert public_functions(CorvoNfse.Resources.Invoices) ==
              [
                calculate: 2,
+               cancel: 3,
+               cancel: 4,
                create: 2,
                create: 3,
+               create_batch: 2,
                download_url: 3,
                events: 2,
                events: 3,

@@ -1,7 +1,7 @@
 defmodule CorvoNfse.Resources.Invoices do
   @moduledoc """
-  NFS-e invoice lifecycle: create, read, list, iterate, events, downloads and
-  email.
+  NFS-e invoice lifecycle: create, create in batch, read, list, iterate, events,
+  downloads, email and cancellation.
 
   Resources come straight in the response `data`, so `{:ok, invoice}` is the
   invoice map itself (camelCase wire keys, unchanged).
@@ -37,6 +37,22 @@ defmodule CorvoNfse.Resources.Invoices do
       json: params,
       idempotency_key: Keyword.get(opts, :idempotency_key)
     )
+  end
+
+  @doc """
+  Creates 1 to 50 invoices in one call (`POST /v1/invoices/batches`), for one
+  company or several.
+
+  Each item takes the keys of `create/3` plus an optional `"idempotencyKey"`
+  (up to 255 characters); the `Idempotency-Key` header is not used by this
+  route. Items are checked one by one: valid ones are saved together, invalid
+  ones come back `"rejected"` and are not saved. Match each result's `"index"`
+  to the item you sent, fix only the rejected ones and send them again.
+  """
+  @spec create_batch(Client.t(), [Invoice.batch_item()]) ::
+          {:ok, Invoice.batch_summary()} | {:error, Error.t()}
+  def create_batch(client, invoices) when is_list(invoices) do
+    Transport.request(client, :post, "/invoices/batches", json: %{"invoices" => invoices})
   end
 
   @doc """
@@ -113,6 +129,31 @@ defmodule CorvoNfse.Resources.Invoices do
     Transport.request(client, :post, "/invoices/#{Transport.segment(id)}/download-url",
       json: %{format: format}
     )
+  end
+
+  @doc """
+  Cancels an invoice (`POST /v1/invoices/:id/cancel`).
+
+  `reason` is `"issue_error"`, `"service_not_provided"` or `"other"`. The
+  `description:` option (15 to 255 characters) is required to cancel an
+  authorized or processing invoice and optional for a queued one.
+
+  A queued invoice is cancelled at once (`"status" => "cancelled"`); an
+  authorized one moves to `"cancelling"` while the cancellation is processed,
+  and a processing one stays `"processing"` with `"cancellationRequestedAt"`
+  set. Call `get/2` later: `"cancelled"` when done, or back to `"authorized"`
+  with `"lastErrorCode"` when the cancellation was rejected.
+  """
+  @spec cancel(Client.t(), String.t(), Invoice.cancellation_reason(), [{:description, String.t()}]) ::
+          {:ok, map()} | {:error, Error.t()}
+  def cancel(client, id, reason, opts \\ []) do
+    body =
+      case Keyword.get(opts, :description) do
+        nil -> %{"reason" => reason}
+        description -> %{"reason" => reason, "description" => description}
+      end
+
+    Transport.request(client, :post, "/invoices/#{Transport.segment(id)}/cancel", json: body)
   end
 
   @doc """

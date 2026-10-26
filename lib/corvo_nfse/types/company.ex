@@ -7,7 +7,7 @@ defmodule CorvoNfse.Types.Company do
   unchanged from the server.
   """
 
-  @typedoc ~S(Tax regime wire value: "MEI" | "Simples Nacional" | "Lucro Presumido" | "Lucro Real".)
+  @typedoc ~S(Tax regime wire value: "MEI" | "Simples Nacional". Corvo serves only these two regimes; any other value returns 422 `ERROR_TAX_REGIME_NOT_SUPPORTED`.)
   @type tax_regime :: String.t()
 
   @typedoc ~S(Environment wire value: "test" | "live".)
@@ -81,12 +81,19 @@ defmodule CorvoNfse.Types.Company do
     * `tradeName`, `municipalReg`, `sendMunicipalReg` (default `false`),
       `defaultServiceCode` (6 digits), `simpleNational`, `specialRegime`,
       `address` - optional
+    * `simplesRate` - required for `Simples Nacional`, ignored for `MEI`: the
+      effective total rate (%) of your DAS, as in the PGDAS-D, e.g. `"6.54"`
+      (0 to 100, at most 2 decimals)
+    * `simplesIssRate` - `Simples Nacional` only: the effective ISS rate (%) of
+      your bracket (1.80 to 5.00), needed when a customer withholds ISS
   """
   @type create_params :: map()
 
   @typedoc """
   Params for `CorvoNfse.Resources.Companies.update/3`; same wire keys as
-  `create_params`, all optional (`null` clears a field server-side).
+  `create_params`, all optional (`null` clears a field server-side). Send a new
+  `simplesRate` to update the Simples rate (for example every month);
+  `simplesIssRate: nil` removes the ISS rate.
   """
   @type update_params :: map()
 
