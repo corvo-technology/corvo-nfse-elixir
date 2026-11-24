@@ -2,7 +2,7 @@ defmodule CorvoNfse do
   @moduledoc """
   Official Elixir SDK for the Corvo NFS-e API.
 
-  All 92 operations of the public API contract 0.3.0 (`spec/openapi.json`),
+  All 94 operations of the public API contract 0.3.0 (`spec/openapi.json`),
   cursor pagination, envelope unwrapping and result-style errors.
 
   ## Quickstart

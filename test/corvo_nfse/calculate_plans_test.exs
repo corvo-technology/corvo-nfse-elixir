@@ -71,7 +71,7 @@ defmodule CorvoNfse.CalculatePlansTest do
 
     assert {:ok, page} = Plans.list(client(), limit: 5)
     assert [%{"slug" => "developer"}] = page.data
-    assert {:ok, %{"monthlyTotalCents" => 8990}} = Plans.get(client(), "growth")
+    assert {:ok, %{"monthlyTotalCents" => 8990}} = Plans.get(client(), "growth", cycle: :annual)
     assert {:ok, %{"recommended_plan" => "volume"}} = Plans.quote(client(), 20_000)
     assert {:ok, nil} = Plans.quote(client(), 0)
 
@@ -79,7 +79,7 @@ defmodule CorvoNfse.CalculatePlansTest do
 
     assert urls == [
              @base <> "/plans?limit=5",
-             @base <> "/plans/growth",
+             @base <> "/plans/growth?cycle=annual",
              @base <> "/plans/quote?volume=20000",
              @base <> "/plans/quote?volume=0"
            ]

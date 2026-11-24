@@ -546,6 +546,10 @@ defmodule CorvoNfse.NewResourcesTest do
       assert {request.method, request.url} == {:post, @base <> "/imports/m1/emit"}
       assert json_body(request) == %{"sendEmail" => true}
 
+      expect_request(json_response(%{"data" => %{"status" => "emitting"}}, status: 202))
+      assert {:ok, _} = Imports.emit(client(), "m1")
+      assert assert_request().body in [nil, ""]
+
       expect_request(empty_response())
       assert {:ok, nil} = Imports.discard(client(), "m1")
       request = assert_request()

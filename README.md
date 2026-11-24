@@ -8,7 +8,7 @@ Elixir SDK for the [Corvo](https://corvo.tech) NFS-e API. Register companies, ca
 - **Webhook verification in one call.** HMAC-SHA256 against the raw body, constant-time.
 - The wire format is passed through unchanged: responses are plain maps with string keys, exactly as the server sent them. Library only, no CLI.
 
-Covers the 92 operations of the public API contract 0.3.0 (<https://corvo.tech/openapi.json>). Full API reference: <https://corvo.tech/en/docs>.
+Covers the 94 operations of the public API contract 0.3.0 (<https://corvo.tech/openapi.json>). Full API reference: <https://corvo.tech/en/docs>.
 
 ## Installation
 
@@ -272,7 +272,7 @@ end
 | `CorvoNfse.Resources.Credits` | `balance`, `plans`, `history`, `iterate_history`, `preview_purchase` |
 | `CorvoNfse.Resources.Billing` | `plan`, `usage` |
 | `CorvoNfse.Resources.Health` | `live` (and `ready`, which is not part of the contract) |
-| `CorvoNfse.Resources.Plans` | `list`, `get`, `quote` (public price catalog, not part of the contract) |
+| `CorvoNfse.Resources.Plans` | `list`, `get` (public price catalog, no API key), `quote` |
 
 Changing plans and the billing portal exist only in the dashboard, so they are not in the SDK. `CorvoNfse.Types.*` documents every wire type with `defstruct` and `@type`.
 

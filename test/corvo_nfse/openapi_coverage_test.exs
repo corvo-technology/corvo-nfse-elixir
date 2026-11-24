@@ -32,6 +32,7 @@ defmodule CorvoNfse.OpenapiCoverageTest do
     Integrations,
     InvoicePackage,
     Invoices,
+    Plans,
     Schedules,
     ServiceFavorites,
     ServiceTaxProfiles,
@@ -82,6 +83,8 @@ defmodule CorvoNfse.OpenapiCoverageTest do
       "serviceTaxProfiles_delete" => &ServiceTaxProfiles.remove(&1, "c1", "s1"),
       "serviceTaxProfiles_update" => &ServiceTaxProfiles.update(&1, "c1", "s1", %{"code" => "x"}),
       "serviceTaxProfiles_approve" => &ServiceTaxProfiles.approve(&1, "c1", "s1"),
+      "plans_list" => &Plans.list/1,
+      "plans_get" => &Plans.get(&1, "solo"),
       "credits_getBalance" => &Credits.balance/1,
       "credits_listHistory" => &Credits.history/1,
       "credits_listPlans" => &Credits.plans/1,
@@ -164,9 +167,9 @@ defmodule CorvoNfse.OpenapiCoverageTest do
                           {op["operationId"], String.upcase(method), path, op}
                         end)
 
-  test "the vendored contract is 0.3.0 with 92 operations" do
+  test "the vendored contract is 0.3.0 with 94 operations" do
     assert @contract["info"]["version"] == "0.3.0"
-    assert length(@contract_operations) == 92
+    assert length(@contract_operations) == 94
   end
 
   test "every operationId of the contract is implemented, and nothing else is mapped" do
@@ -195,7 +198,9 @@ defmodule CorvoNfse.OpenapiCoverageTest do
       request = assert_request()
 
       assert String.upcase(Atom.to_string(request.method)) == @method
-      assert {"x-api-key", api_key()} in request.headers
+      # the public catalog needs no API key; every other operation sends one
+      unless @operation_id in ~w(plans_list plans_get),
+        do: assert({"x-api-key", api_key()} in request.headers)
 
       %URI{path: url_path, query: query} = URI.parse(request.url)
       assert String.starts_with?(url_path, "/v1")

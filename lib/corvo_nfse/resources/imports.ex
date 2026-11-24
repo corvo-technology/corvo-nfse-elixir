@@ -58,18 +58,18 @@ defmodule CorvoNfse.Resources.Imports do
   @doc """
   Emits every valid row (`POST /v1/imports/:id/emit`, answers `202`).
 
-  `send_email:` (boolean) sends the invoice e-mail to each customer.
+  `send_email:` (boolean) sends the invoice e-mail to each customer. Without it, no body is sent.
   """
   @spec emit(Client.t(), String.t(), [{:send_email, boolean()}]) ::
           {:ok, map()} | {:error, Error.t()}
   def emit(client, id, opts \\ []) do
-    body =
+    json =
       case Keyword.get(opts, :send_email) do
-        nil -> %{}
-        send_email -> %{"sendEmail" => send_email}
+        nil -> []
+        send_email -> [json: %{"sendEmail" => send_email}]
       end
 
-    Transport.request(client, :post, path(id) <> "/emit", json: body)
+    Transport.request(client, :post, path(id) <> "/emit", json)
   end
 
   @doc "Rows of an import, one page at a time (default 50, at most 200); `status:` filters."

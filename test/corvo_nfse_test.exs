@@ -94,7 +94,15 @@ defmodule CorvoNfseTest do
              ]
 
     assert public_functions(CorvoNfse.Resources.Billing) == [plan: 1, usage: 1]
-    assert public_functions(CorvoNfse.Resources.Plans) == [get: 2, list: 1, list: 2, quote: 2]
+
+    assert public_functions(CorvoNfse.Resources.Plans) == [
+             get: 2,
+             get: 3,
+             list: 1,
+             list: 2,
+             quote: 2
+           ]
+
     assert public_functions(CorvoNfse.Resources.Health) == [live: 1, ready: 1]
   end
 

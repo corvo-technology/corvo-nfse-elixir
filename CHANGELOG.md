@@ -4,9 +4,22 @@ All notable changes to `corvo_nfse` are documented here.
 
 ## 0.3.0
 
-Follows the public API contract 0.3.0 (`spec/openapi.json`): all 92 operations are covered, and
+Follows the public API contract 0.3.0 (`spec/openapi.json`): all 94 operations are covered, and
 `test/corvo_nfse/openapi_coverage_test.exs` fails when the contract has an operation the SDK lacks.
 (The version jumps from 0.2.0 to 0.3.0 so the SDK number follows the contract number.)
+
+### Contract corrections
+
+- New public operations `plans_list` (`GET /plans`) and `plans_get` (`GET /plans/{slug}`): no API
+  key needed; `Plans.list/2` and `Plans.get/3` accept `cycle:` (`monthly` or `annual`) and return `PlanPrice`.
+- `InvoicePackage.summary/3`: `total` is a decimal string (`"1234.50"`), not a number.
+- Nullable fields: company `tradeName`, `address*`, `municipalReg`, `defaultServiceCode` and tax rates;
+  invoice `emailStatus`, `lastEmailStatus`, `cancellationReason`, `portalFlag`; `Invoices.calculate/2`
+  `classification`, `applicability`, `calculation`. `nfseNumber`, `dpsNumber` and `DpsSequence.lastNumber` are int64.
+- `Invoices.create_batch/3`: `results[].error.details` is a list of issues or an object.
+- `Invoices.send_email/3` and `Imports.emit/3` send no body when there are no params.
+- `Companies.update/3`: `taxId` is no longer accepted (the CNPJ is immutable).
+- `Billing.plan/1`: `stripe_subscription` is a boolean; `pix_subscription` is an object or `null`.
 
 ### Breaking
 

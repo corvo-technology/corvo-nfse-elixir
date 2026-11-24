@@ -10,7 +10,7 @@ defmodule CorvoNfse.Resources.InvoicePackage do
   alias CorvoNfse.{Client, Error, Transport}
   alias CorvoNfse.Types.Invoice
 
-  @doc "Count and total of the month package, without building it."
+  @doc "Count and total of the month package, without building it. `total` is a decimal string such as `\"1234.50\"`."
   @spec summary(Client.t(), String.t(), String.t()) :: {:ok, map()} | {:error, Error.t()}
   def summary(client, company_id, month) do
     Transport.request(client, :get, base(company_id) <> "/summary", query: [month: month])

@@ -107,16 +107,16 @@ defmodule CorvoNfse.Types.Credits do
           }
   end
 
-  defmodule PlanQuote do
-    @moduledoc "Wire shape of an entry of the public catalog (`GET /plans`); prices in centavos."
+  defmodule PlanPrice do
+    @moduledoc "Wire shape of an entry of the public catalog (`GET /plans`, `PlanPrice`); prices in centavos."
 
     defstruct [
       :slug,
       :name,
       :monthlyAllowance,
       :basePriceCents,
-      :perCreditOverageCents,
-      :monthlyTotalCents,
+      :monthlyEquivalentCents,
+      :chargeTotalCents,
       :currency
     ]
 
@@ -125,8 +125,8 @@ defmodule CorvoNfse.Types.Credits do
             name: String.t(),
             monthlyAllowance: integer(),
             basePriceCents: integer(),
-            perCreditOverageCents: integer(),
-            monthlyTotalCents: integer(),
+            monthlyEquivalentCents: integer(),
+            chargeTotalCents: integer(),
             currency: String.t()
           }
   end
@@ -143,5 +143,5 @@ defmodule CorvoNfse.Types.Credits do
   @type balance :: Balance.t()
   @type plan :: Plan.t()
   @type transaction :: Transaction.t()
-  @type plan_quote :: PlanQuote.t()
+  @type plan_price :: PlanPrice.t()
 end

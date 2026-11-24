@@ -91,7 +91,9 @@ defmodule CorvoNfse.Types.Company do
 
   @typedoc """
   Params for `CorvoNfse.Resources.Companies.update/3`; same wire keys as
-  `create_params`, all optional (`null` clears a field server-side). Send a new
+  `create_params` except `taxId` (the CNPJ is immutable and not accepted), all
+  optional (`null` clears a field server-side). In responses, `tradeName`,
+  `address*`, `municipalReg`, `defaultServiceCode` and the tax rates may be `null`. Send a new
   `simplesRate` to update the Simples rate (for example every month);
   `simplesIssRate: nil` removes the ISS rate.
   """
