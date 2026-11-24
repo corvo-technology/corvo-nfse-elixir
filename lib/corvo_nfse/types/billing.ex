@@ -14,15 +14,18 @@ defmodule CorvoNfse.Types.Billing do
     Wire shape of `GET /billing/plan`. `plan`, `subscription` and `usage` are
     plain JSON snake_case string-keyed objects:
 
-      * `plan` - `slug`, `name`, `monthly_allowance`, `daily_limit`,
+      * `plan` - `slug` (`free`, `self-hosted`, `solo`, `equipe`, `empresa`,
+        `escala`), `name`, `monthly_allowance`, `daily_limit`,
         `max_active_companies`, `monthly_price_cents`
       * `subscription` - `status`, `paid_until`, `cancel_at_period_end`,
-        `scheduled_plan`, `blocked`
-      * `usage` - `overage_units`, `overage_amount_cents`, `hard_limit`,
-        `credits_used`, `credits_reserved`, `credits_remaining`,
-        `monthly_allowance`, `daily_usage`, `daily_limit`,
-        `active_companies`, `max_active_companies`, `period_start`,
-        `period_end`
+        `scheduled_plan`, `blocked`, `stripe_portal_available`,
+        `stripe_subscription` (boolean) and `pix_subscription` (an object or `nil`)
+      * `usage` - `hard_limit`, `avulso_balance`, `credits_used`,
+        `credits_reserved`, `credits_remaining`, `monthly_allowance`,
+        `daily_usage`, `daily_limit`, `active_companies`,
+        `max_active_companies`, `period_start`, `period_end`
+
+    A workspace without a plan answers `404` with `code: "NO_PLAN_ASSIGNED"`.
     """
     @type t :: %__MODULE__{
             plan: %{optional(String.t()) => term()},

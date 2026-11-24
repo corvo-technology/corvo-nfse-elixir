@@ -13,7 +13,9 @@ defmodule CorvoNfse.WebhooksResourceTest do
 
   test "create posts url and events" do
     expect_request(
-      json_response(%{"data" => %{"id" => "wh_1", "url" => "https://x.test/hook", "secret" => "whsec_1"}})
+      json_response(%{
+        "data" => %{"id" => "wh_1", "url" => "https://x.test/hook", "secret" => "whsec_1"}
+      })
     )
 
     params = %{url: "https://x.test/hook", events: ["nfse.invoice.authorized"]}
@@ -23,7 +25,11 @@ defmodule CorvoNfse.WebhooksResourceTest do
     request = assert_request()
     assert request.method == :post
     assert request.url == @base <> "/webhooks"
-    assert Jason.decode!(request.body) == %{"url" => "https://x.test/hook", "events" => ["nfse.invoice.authorized"]}
+
+    assert Jason.decode!(request.body) == %{
+             "url" => "https://x.test/hook",
+             "events" => ["nfse.invoice.authorized"]
+           }
   end
 
   test "list, remove and test address the webhook paths" do
@@ -52,13 +58,16 @@ defmodule CorvoNfse.WebhooksResourceTest do
              Deliveries.list(client(), hours: 24, environment: "test", limit: 10)
 
     request = assert_request()
+
     assert request.url ==
              @base <> "/webhooks/deliveries?hours=24&environment=test&limit=10"
   end
 
   test "deliveries stats reads the stats endpoint" do
     expect_request(
-      json_response(%{"data" => %{"total" => 3, "sent" => 2, "failed" => 1, "pending" => 0, "delayed" => 0}})
+      json_response(%{
+        "data" => %{"total" => 3, "sent" => 2, "failed" => 1, "pending" => 0, "delayed" => 0}
+      })
     )
 
     assert {:ok, %{"total" => 3}} = Deliveries.stats(client(), hours: 6, environment: "live")

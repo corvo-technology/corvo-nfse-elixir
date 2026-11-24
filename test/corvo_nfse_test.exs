@@ -4,7 +4,7 @@ defmodule CorvoNfseTest do
   alias CorvoNfse.Types.Webhook
 
   test "exposes the package version" do
-    assert CorvoNfse.version() == "0.2.0"
+    assert CorvoNfse.version() == "0.3.0"
   end
 
   test "new/1 builds a configured client" do
@@ -14,11 +14,11 @@ defmodule CorvoNfseTest do
     assert client.base_url == "https://api.corvo.tech"
   end
 
-  test "webhook events are the canonical 11" do
+  test "webhook events are the canonical 12" do
     events = Webhook.events()
 
     assert is_list(events)
-    assert length(events) == 11
+    assert length(events) == 12
     assert Enum.all?(events, &is_binary/1)
     assert "nfse.invoice.fiscal_discrepancy" in events
     assert "nfse.invoice.cancelled" in events
@@ -64,9 +64,14 @@ defmodule CorvoNfseTest do
                iterate: 2,
                list: 1,
                list: 2,
+               overview: 1,
+               overview: 2,
                pdf: 2,
+               review: 3,
                send_email: 2,
                send_email: 3,
+               substitute: 3,
+               substitute: 4,
                xml: 2
              ]
 
@@ -84,11 +89,20 @@ defmodule CorvoNfseTest do
                iterate_history: 1,
                iterate_history: 2,
                plans: 1,
-               plans: 2
+               plans: 2,
+               preview_purchase: 2
              ]
 
     assert public_functions(CorvoNfse.Resources.Billing) == [plan: 1, usage: 1]
-    assert public_functions(CorvoNfse.Resources.Plans) == [get: 2, list: 1, list: 2, quote: 2]
+
+    assert public_functions(CorvoNfse.Resources.Plans) == [
+             get: 2,
+             get: 3,
+             list: 1,
+             list: 2,
+             quote: 2
+           ]
+
     assert public_functions(CorvoNfse.Resources.Health) == [live: 1, ready: 1]
   end
 

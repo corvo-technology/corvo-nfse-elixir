@@ -15,25 +15,34 @@ defmodule CorvoNfse.Types.Webhook do
     "nfse.invoice.email_failed",
     "nfse.invoice.fiscal_discrepancy",
     "nfse.invoice.cancelled",
-    "nfse.invoice.cancellation_rejected"
+    "nfse.invoice.cancellation_rejected",
+    "nfse.invoice.taker_rejected"
   ]
 
   @typedoc """
-  Webhook event wire value - one of the canonical 11 events from `events/0`:
+  Webhook event wire value - one of the canonical 12 events from `events/0`:
   `nfse.invoice.authorized`, `nfse.invoice.rejected`, `nfse.invoice.failed`,
   `nfse.invoice.reconciliation_required`, `nfse.invoice.manual_review`,
   `nfse.invoice.documents_ready`, `nfse.invoice.email_sent`,
   `nfse.invoice.email_failed`, `nfse.invoice.fiscal_discrepancy`,
-  `nfse.invoice.cancelled`, `nfse.invoice.cancellation_rejected`. The
+  `nfse.invoice.cancelled`, `nfse.invoice.cancellation_rejected`,
+  `nfse.invoice.taker_rejected` (the customer rejected the invoice on the
+  portal). The
   `webhook.test` event is only sent by `Webhooks.test/2` and cannot be
   subscribed.
   """
   @type event :: String.t()
 
-  @typedoc ~S(Environment wire value: "test" | "live".)
+  @typedoc """
+  Environment wire value: "test" | "live". A webhook created with an API key
+  is tied to that key's environment and only receives its events: a
+  `corvo_test_` key cannot reach live webhooks. Destinations that resolve to
+  private, loopback, link-local, CGNAT or other non-public addresses are
+  refused when registered and when delivered.
+  """
   @type environment :: String.t()
 
-  @doc "The canonical 9 webhook events."
+  @doc "The canonical 12 webhook events."
   @spec events() :: [String.t()]
   def events, do: @events
 

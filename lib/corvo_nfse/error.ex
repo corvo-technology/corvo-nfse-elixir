@@ -40,7 +40,8 @@ defmodule CorvoNfse.Error do
           retry_after: non_neg_integer() | nil
         }
 
-  def message(%__MODULE__{message: message}) when is_binary(message) and message != "", do: message
+  def message(%__MODULE__{message: message}) when is_binary(message) and message != "",
+    do: message
 
   def message(%__MODULE__{} = error) do
     "Corvo NFS-e API error (status=#{inspect(error.status)}, code=#{inspect(error.code)})"

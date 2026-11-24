@@ -1,7 +1,7 @@
 defmodule CorvoNfse.Resources.Invoices do
   @moduledoc """
   NFS-e invoice lifecycle: create, create in batch, read, list, iterate, events,
-  downloads, email and cancellation.
+  downloads, email, cancellation, substitution, overview and manual review.
 
   Resources come straight in the response `data`, so `{:ok, invoice}` is the
   invoice map itself (camelCase wire keys, unchanged).
@@ -16,6 +16,7 @@ defmodule CorvoNfse.Resources.Invoices do
           | {:from, String.t()}
           | {:to, String.t()}
           | {:external_id, String.t()}
+          | {:customer_tax_id, String.t()}
           | {:limit, pos_integer()}
           | {:cursor, String.t()}
 
@@ -28,10 +29,18 @@ defmodule CorvoNfse.Resources.Invoices do
   Creates an invoice (`POST /v1/invoices`).
 
   Pass `idempotency_key:` to send the `Idempotency-Key` header. The response
-  is `202 Accepted`; `{:ok, invoice}` carries the invoice entity.
+  is `202 Accepted`.
+
+  `{:ok, data}` is an invoice (`"status" => "queued"`) for
+  `"options" => %{"type" => "IMMEDIATE"}` (the default). With `"SCHEDULE"` or
+  `"RECURRING"` (the latter also takes `"options" => %{"recurrence" =>
+  %{"frequency" => "WEEKLY" | "BIWEEKLY" | "MONTHLY", "endsOn" => ...}}`) it is
+  a **schedule** instead (snake_case fields: `"kind"`, `"next_run_on"`, ...);
+  the note only exists when the schedule runs. Follow it with
+  `CorvoNfse.Resources.Schedules`.
   """
   @spec create(Client.t(), Invoice.create_params(), [{:idempotency_key, String.t()}]) ::
-          {:ok, map()} | {:error, Error.t()}
+          {:ok, Invoice.created()} | {:error, Error.t()}
   def create(client, params, opts \\ []) when is_map(params) do
     Transport.request(client, :post, "/invoices",
       json: params,
@@ -159,14 +168,67 @@ defmodule CorvoNfse.Resources.Invoices do
   @doc """
   Triggers the fiscal document email (`POST /v1/invoices/:id/email`).
 
-  Pass `idempotency_key:` to send the `Idempotency-Key` header. The response
-  is `202 Accepted`.
+  Pass `idempotency_key:` to send the `Idempotency-Key` header, and `email:`
+  to send to another address than the customer's. The response is
+  `202 Accepted`.
   """
-  @spec send_email(Client.t(), String.t(), [{:idempotency_key, String.t()}]) ::
+  @spec send_email(Client.t(), String.t(), [{:idempotency_key, String.t()} | {:email, String.t()}]) ::
           {:ok, map()} | {:error, Error.t()}
   def send_email(client, id, opts \\ []) do
-    Transport.request(client, :post, "/invoices/#{Transport.segment(id)}/email",
+    json =
+      case Keyword.get(opts, :email) do
+        nil -> []
+        email -> [json: %{"email" => email}]
+      end
+
+    Transport.request(
+      client,
+      :post,
+      "/invoices/#{Transport.segment(id)}/email",
+      [idempotency_key: Keyword.get(opts, :idempotency_key)] ++ json
+    )
+  end
+
+  @doc """
+  Substitutes an authorized invoice with a corrected one
+  (`POST /v1/invoices/:id/substitute`, answers `202` with the new invoice).
+
+  `params` takes `"description"` (why, required) and, to change them,
+  `"service" => %{"description" => ...}`, `"purchaseOrder"` and `"notes"`.
+  Pass `idempotency_key:` to send the `Idempotency-Key` header. A non-substitutable
+  invoice fails with `ERROR_INVOICE_NOT_SUBSTITUTABLE`.
+  """
+  @spec substitute(Client.t(), String.t(), map(), [{:idempotency_key, String.t()}]) ::
+          {:ok, map()} | {:error, Error.t()}
+  def substitute(client, id, params, opts \\ []) when is_map(params) do
+    Transport.request(client, :post, "/invoices/#{Transport.segment(id)}/substitute",
+      json: params,
       idempotency_key: Keyword.get(opts, :idempotency_key)
+    )
+  end
+
+  @doc """
+  Counts and totals of the tenant's invoices (`GET /v1/invoices/overview`).
+
+  `period:` is `"7d"` (default) or `"30d"`.
+  """
+  @spec overview(Client.t(), [{:period, String.t()}]) :: {:ok, map()} | {:error, Error.t()}
+  def overview(client, opts \\ []) do
+    Transport.request(client, :get, "/invoices/overview",
+      query: [period: Keyword.get(opts, :period)]
+    )
+  end
+
+  @doc """
+  Resolves invoices stuck in `manual_review` (`POST /v1/invoices/review`,
+  up to 100, answers `202`).
+
+  `action` is `"retry"` or `"discard"`.
+  """
+  @spec review(Client.t(), String.t(), [String.t()]) :: {:ok, map()} | {:error, Error.t()}
+  def review(client, action, invoice_ids) when is_list(invoice_ids) do
+    Transport.request(client, :post, "/invoices/review",
+      json: %{"action" => action, "invoiceIds" => invoice_ids}
     )
   end
 
@@ -177,6 +239,7 @@ defmodule CorvoNfse.Resources.Invoices do
       from: Keyword.get(opts, :from),
       to: Keyword.get(opts, :to),
       externalId: Keyword.get(opts, :external_id),
+      customerTaxId: Keyword.get(opts, :customer_tax_id),
       limit: Keyword.get(opts, :limit),
       cursor: Keyword.get(opts, :cursor)
     ]

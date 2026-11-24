@@ -14,7 +14,11 @@ defmodule CorvoNfse.CompaniesTest do
     expect_request(json_response(%{"data" => %{"id" => "comp_1"}}))
 
     assert {:ok, %{"id" => "comp_1"}} =
-             Companies.create(client(), %{"legalName" => "Acme", "taxId" => "1", "taxRegime" => "MEI"})
+             Companies.create(client(), %{
+               "legalName" => "Acme",
+               "taxId" => "1",
+               "taxRegime" => "MEI"
+             })
 
     request = assert_request()
     assert request.method == :post

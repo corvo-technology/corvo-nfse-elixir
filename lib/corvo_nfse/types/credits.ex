@@ -8,14 +8,17 @@ defmodule CorvoNfse.Types.Credits do
   defmodule Balance do
     @moduledoc "Wire shape of `GET /credits`."
 
-    defstruct [:tenantId, :balance, :overageUnits, :overageAmountCents, :hardLimit]
+    defstruct [:balance, :planRemaining, :avulsoBalance, :hardLimit]
 
+    @typedoc """
+    `balance` is `planRemaining` (plan notes left, 0 for a lapsed plan) plus
+    `avulsoBalance` (loose notes bought separately).
+    """
     @type t :: %__MODULE__{
-            tenantId: String.t(),
             balance: integer(),
-            overageUnits: integer(),
-            overageAmountCents: integer(),
-            hardLimit: integer() | nil
+            planRemaining: integer(),
+            avulsoBalance: integer(),
+            hardLimit: integer()
           }
   end
 
@@ -104,16 +107,16 @@ defmodule CorvoNfse.Types.Credits do
           }
   end
 
-  defmodule PlanQuote do
-    @moduledoc "Wire shape of an entry of the public catalog (`GET /plans`); prices in centavos."
+  defmodule PlanPrice do
+    @moduledoc "Wire shape of an entry of the public catalog (`GET /plans`, `PlanPrice`); prices in centavos."
 
     defstruct [
       :slug,
       :name,
       :monthlyAllowance,
       :basePriceCents,
-      :perCreditOverageCents,
-      :monthlyTotalCents,
+      :monthlyEquivalentCents,
+      :chargeTotalCents,
       :currency
     ]
 
@@ -122,14 +125,23 @@ defmodule CorvoNfse.Types.Credits do
             name: String.t(),
             monthlyAllowance: integer(),
             basePriceCents: integer(),
-            perCreditOverageCents: integer(),
-            monthlyTotalCents: integer(),
+            monthlyEquivalentCents: integer(),
+            chargeTotalCents: integer(),
             currency: String.t()
           }
   end
 
+  defmodule PurchasePreview do
+    @moduledoc "Wire shape of `GET /credits/purchase/preview`."
+
+    defstruct [:units, :unitPriceCents, :totalCents]
+
+    @type t :: %__MODULE__{units: integer(), unitPriceCents: integer(), totalCents: integer()}
+  end
+
+  @type purchase_preview :: PurchasePreview.t()
   @type balance :: Balance.t()
   @type plan :: Plan.t()
   @type transaction :: Transaction.t()
-  @type plan_quote :: PlanQuote.t()
+  @type plan_price :: PlanPrice.t()
 end

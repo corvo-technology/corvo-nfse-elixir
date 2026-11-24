@@ -26,6 +26,8 @@ defmodule CorvoNfse.Transport do
 
   alias CorvoNfse.{Client, Error}
 
+  @user_agent "corvo-nfse-elixir/" <> Mix.Project.config()[:version]
+
   @type unwrap :: :data | :none
   @type item_mode :: :raw
   @type option ::
@@ -51,7 +53,7 @@ defmodule CorvoNfse.Transport do
     * `:idempotency_key` - sent as `Idempotency-Key`.
     * `:unwrap` - `:data` (default) or `:none`.
   """
-  @spec request(Client.t(), :get | :post | :patch | :delete, String.t(), [option()]) ::
+  @spec request(Client.t(), :get | :post | :put | :patch | :delete, String.t(), [option()]) ::
           {:ok, term()} | {:error, Error.t()}
   def request(client, method, path, opts \\ []) do
     case dispatch(client, method, path, opts) do
@@ -65,7 +67,7 @@ defmodule CorvoNfse.Transport do
 
   Returns `{:ok, %{body: binary, mime_type: binary | nil, file_name: binary | nil}}`.
   """
-  @spec request_raw(Client.t(), :get | :post | :patch | :delete, String.t(), [option()]) ::
+  @spec request_raw(Client.t(), :get | :post | :put | :patch | :delete, String.t(), [option()]) ::
           {:ok, map()} | {:error, Error.t()}
   def request_raw(client, method, path, opts \\ []) do
     case dispatch(client, method, path, opts) do
@@ -210,6 +212,7 @@ defmodule CorvoNfse.Transport do
   defp build_headers(api_key, opts) do
     headers = [
       {"x-api-key", api_key},
+      {"user-agent", @user_agent},
       {"accept", "application/json"}
     ]
 
