@@ -2,6 +2,54 @@
 
 All notable changes to `corvo_nfse` are documented here.
 
+## 0.3.0
+
+Follows the public API contract 0.3.0 (`spec/openapi.json`): all 92 operations are covered, and
+`test/corvo_nfse/openapi_coverage_test.exs` fails when the contract has an operation the SDK lacks.
+(The version jumps from 0.2.0 to 0.3.0 so the SDK number follows the contract number.)
+
+### Breaking
+
+- **Plan slugs** `developer`, `growth`, `scale` and `volume` are gone. They are now `free`,
+  `solo`, `equipe`, `empresa` and `escala` (plus `self-hosted`). Treat the slug as an open string.
+- **`Invoices.create/3` with `"options" => %{"type" => "SCHEDULE"}`** no longer answers with an invoice:
+  `{:ok, data}` is a schedule (snake_case fields). `"RECURRING"` (with `"recurrence"`) is new and
+  answers the same way. Follow the schedule with `Schedules`.
+- **`Credits.balance/1`**: `overageUnits` and `overageAmountCents` were removed; `planRemaining` and
+  `avulsoBalance` were added, and `balance` now includes the loose notes.
+- **`Billing.plan/1`**: `usage.overage_units` and `usage.overage_amount_cents` were removed;
+  `usage.avulso_balance`, `subscription.stripe_portal_available`, `stripe_subscription` and
+  `pix_subscription` were added. A workspace without a plan answers `404` with `NO_PLAN_ASSIGNED`.
+- **Credits purchase preview** is now `Credits.preview_purchase/2` (`GET /credits/purchase/preview?units=N`);
+  the old `POST` only answered `410`.
+- **Webhook events**: 12 types (`nfse.invoice.taker_rejected` is new). A test key can no longer reach
+  live webhooks (webhooks are tied to the key's environment), and URLs that resolve to private
+  networks are refused.
+- Invoice fields follow the contract: `documentsReadyAt`, `documentsStatus`, `emailStatus`, `stage`,
+  `lastEmailStatus` (not `documentsReady`/`lastEmail`); new `substitutesInvoiceId`,
+  `substitutionDescription` and `portalFlag`.
+
+### Added
+
+- New resources: `Customers` (`search`, `iterate`, `get`, `update`, `remove`), `Cnpj.lookup/2`,
+  `ServiceFavorites`, `AccountantPackage` (`get`, `update`, `send`, `list_sends`), `InvoicePackage`
+  (`summary`, ZIP `download`), `Schedules` (`list`, `iterate`, `get`, `update`, `pause`, `resume`,
+  `cancel`, `list_runs`, `iterate_runs`), `Imports` (multipart `start`, `list`, `get`, `emit`,
+  `list_rows`, `iterate_rows`, `update_row`, `discard`, `download_template`, `download_errors`),
+  `FiscalProfiles`, `ServiceTaxProfiles`, `DpsSequence`, `FiscalPortal.status/1`, `Integrations`,
+  `IntegrationConnections` and `IntegrationOperations`.
+- `Invoices.substitute/4`, `Invoices.overview/2`, `Invoices.review/3`, the `customer_tax_id:` list filter
+  and the `email:` option of `Invoices.send_email/3`.
+- `Credits.preview_purchase/2`.
+- `CorvoNfse.Multipart` (shared multipart builder), `Types.Schedule`, `Types.Credits.PurchasePreview`.
+- A `User-Agent: corvo-nfse-elixir/<version>` header on every request.
+- Requests accept `PUT`.
+
+### Changed
+
+- CI checks formatting and also runs Elixir 1.18.
+- Plan docs and the `Types` docs follow the new contract.
+
 ## 0.1.1
 
 ### Fixed

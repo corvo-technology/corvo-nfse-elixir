@@ -2,8 +2,8 @@ defmodule CorvoNfse do
   @moduledoc """
   Official Elixir SDK for the Corvo NFS-e API.
 
-  28 API-key operations plus 2 public health checks, cursor pagination,
-  envelope unwrapping and result-style errors.
+  All 92 operations of the public API contract 0.3.0 (`spec/openapi.json`),
+  cursor pagination, envelope unwrapping and result-style errors.
 
   ## Quickstart
 
@@ -45,7 +45,11 @@ defmodule CorvoNfse do
     * `CorvoNfse.Error` - the single error type.
     * `CorvoNfse.Webhooks` - `verify_signature/3` (HMAC-SHA256).
     * `CorvoNfse.Resources.*` - `Companies`, `Certificates`, `Invoices`,
-      `Webhooks` (+ `Webhooks.Deliveries`), `Credits`, `Billing`, `Health`.
+      `InvoicePackage`, `Customers`, `Cnpj`, `ServiceFavorites`,
+      `AccountantPackage`, `Schedules`, `Imports`, `FiscalProfiles`,
+      `ServiceTaxProfiles`, `DpsSequence`, `FiscalPortal`, `Integrations`,
+      `IntegrationConnections`, `IntegrationOperations`, `Webhooks`
+      (+ `Webhooks.Deliveries`), `Credits`, `Billing`, `Health`.
     * `CorvoNfse.Types.*` - wire types mirroring the Node SDK.
   """
 

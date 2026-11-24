@@ -65,7 +65,10 @@ defmodule CorvoNfse.Types.Invoice do
     :cancellationReason,
     :cancellationDescription,
     :cancelledAt,
-    :cancellationRequestedAt
+    :cancellationRequestedAt,
+    :substitutesInvoiceId,
+    :substitutionDescription,
+    :portalFlag
   ]
 
   @type t :: %__MODULE__{
@@ -112,7 +115,12 @@ defmodule CorvoNfse.Types.Invoice do
           cancellationReason: cancellation_reason() | nil,
           cancellationDescription: String.t() | nil,
           cancelledAt: String.t() | nil,
-          cancellationRequestedAt: String.t() | nil
+          cancellationRequestedAt: String.t() | nil,
+          # set on a substitute invoice
+          substitutesInvoiceId: String.t() | nil,
+          substitutionDescription: String.t() | nil,
+          # "taker_rejected" | "blocked", from the national portal
+          portalFlag: String.t() | nil
         }
 
   @typedoc """
@@ -132,8 +140,16 @@ defmodule CorvoNfse.Types.Invoice do
       same as omitting it). The invoice is still issued for the full `amount`;
       the issuer is responsible for the declared value
     * `email` (optional) - boolean; `options.email.send` wins when set
-    * `options` (optional) - `%{email?: %{send: boolean}, type?: "IMMEDIATE" | "SCHEDULE"}`
+    * `options` (optional) - `%{email?: %{send: boolean}, type?: "IMMEDIATE" | "SCHEDULE" | "RECURRING",
+      recurrence?: %{frequency: "WEEKLY" | "BIWEEKLY" | "MONTHLY", endsOn?: "YYYY-MM-DD"}}`;
+      `recurrence` is required for `RECURRING` and refused otherwise. For
+      `SCHEDULE`/`RECURRING`, `competenceDate` is the date of the first run
+      (from tomorrow on, runs 09:00 America/Sao_Paulo on weekdays)
     * `externalId` (optional)
+    * `purchaseOrder` (optional, up to 60 characters, DPS `xPed`) and `notes`
+      (optional, up to 2000, DPS `xInfComp`)
+    * `customer.foreign` (optional) - a customer outside Brazil; cannot be
+      combined with `customer.taxId` or `customer.address`
   """
   @type create_params :: map()
 
@@ -151,6 +167,13 @@ defmodule CorvoNfse.Types.Invoice do
   or `%{"index" => 1, "status" => "rejected", "error" => %{"code" => ..., "message" => ..., "details" => ...}}`.
   """
   @type batch_summary :: map()
+
+  @typedoc """
+  What `Invoices.create/3` returns in `data`: an invoice map for `IMMEDIATE`,
+  a schedule map (snake_case, see `CorvoNfse.Types.Schedule`) for `SCHEDULE`
+  and `RECURRING`.
+  """
+  @type created :: map()
 
   @typedoc "Customer input for `create_params`."
   @type customer_input :: map()

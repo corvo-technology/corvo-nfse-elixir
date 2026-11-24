@@ -23,8 +23,12 @@ defmodule CorvoNfse.Resources.Plans do
   end
 
   @doc """
-  Reads the price of one plan (`GET /v1/plans/:slug`): `"free"`, `"developer"`,
-  `"growth"`, `"scale"` or `"volume"`.
+  Reads the price of one plan (`GET /v1/plans/:slug`): `"free"`, `"solo"`,
+  `"equipe"`, `"empresa"` or `"escala"`. Treat the slug as an open string.
+
+  This public catalog is not part of the OpenAPI contract (it feeds the pricing
+  page); the plan data a key can read is in `CorvoNfse.Resources.Billing.plan/1`
+  and `CorvoNfse.Resources.Credits.plans/2`.
   """
   @spec get(Client.t(), String.t()) :: {:ok, map()} | {:error, Error.t()}
   def get(client, slug) do

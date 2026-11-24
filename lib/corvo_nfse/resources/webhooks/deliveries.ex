@@ -47,7 +47,11 @@ defmodule CorvoNfse.Resources.Webhooks.Deliveries do
   @doc "Requeues a delivery (`POST /v1/webhooks/deliveries/:id/retry`)."
   @spec retry(Client.t(), String.t()) :: {:ok, map()} | {:error, Error.t()}
   def retry(client, delivery_id) do
-    Transport.request(client, :post, "/webhooks/deliveries/#{Transport.segment(delivery_id)}/retry")
+    Transport.request(
+      client,
+      :post,
+      "/webhooks/deliveries/#{Transport.segment(delivery_id)}/retry"
+    )
   end
 
   defp list_query(opts) do

@@ -12,7 +12,7 @@ defmodule CorvoNfse.HTTP do
   onto `CorvoNfse.Error`.
   """
 
-  @type method :: :get | :post | :patch | :delete
+  @type method :: :get | :post | :put | :patch | :delete
 
   @type request :: %{
           method: method(),

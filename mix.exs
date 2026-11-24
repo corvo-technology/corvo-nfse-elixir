@@ -1,7 +1,7 @@
 defmodule CorvoNfse.MixProject do
   use Mix.Project
 
-  @version "0.2.0"
+  @version "0.3.0"
   @source_url "https://github.com/corvo-technology/corvo-nfse-elixir"
 
   def project do

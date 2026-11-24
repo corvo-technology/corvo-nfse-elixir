@@ -11,16 +11,38 @@ defmodule CorvoNfse.Resources.Credits do
 
   @type list_option :: {:limit, pos_integer()} | {:cursor, String.t()}
 
-  @doc "Reads the credit balance (`GET /v1/credits`)."
+  @doc """
+  Reads the credit balance (`GET /v1/credits`).
+
+  `"balance"` is the plan notes left (`"planRemaining"`) plus the loose notes
+  bought separately (`"avulsoBalance"`). There is no overage billing, so
+  `overageUnits` and `overageAmountCents` no longer exist.
+  """
   @spec balance(Client.t()) :: {:ok, map()} | {:error, Error.t()}
   def balance(client) do
     Transport.request(client, :get, "/credits")
   end
 
-  @doc "Lists credit plans (`GET /v1/credits/plans`)."
+  @doc """
+  Lists credit plans (`GET /v1/credits/plans`).
+
+  Treat `"slug"` as an open string (`free`, `solo`, `equipe`, `empresa`,
+  `escala`, plus `self-hosted`); read the allowance from `"monthlyCreditAllowance"`.
+  """
   @spec plans(Client.t(), [list_option()]) :: {:ok, Common.page()} | {:error, Error.t()}
   def plans(client, opts \\ []) do
     Transport.list(client, "/credits/plans", list_query(opts), :raw)
+  end
+
+  @doc """
+  Prices a one-off purchase of `units` loose notes (`GET /v1/credits/purchase/preview?units=N`):
+  `%{"units" => 10, "unitPriceCents" => 99, "totalCents" => 990}`.
+
+  At least 3 notes, whole numbers. Buying is done in the dashboard.
+  """
+  @spec preview_purchase(Client.t(), pos_integer()) :: {:ok, map()} | {:error, Error.t()}
+  def preview_purchase(client, units) do
+    Transport.request(client, :get, "/credits/purchase/preview", query: [units: units])
   end
 
   @doc "Lists credit transactions (`GET /v1/credits/history`)."

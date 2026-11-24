@@ -117,10 +117,6 @@ defmodule CorvoNfse.Client do
         _ -> System.get_env("CORVO_BASE_URL") || @default_base_url
       end
 
-    unless is_binary(url) and url != "" do
-      raise ArgumentError, "CorvoNfse: invalid base_url: #{inspect(url)}"
-    end
-
     url
   end
 

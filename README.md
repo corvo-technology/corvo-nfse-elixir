@@ -8,14 +8,14 @@ Elixir SDK for the [Corvo](https://corvo.tech) NFS-e API. Register companies, ca
 - **Webhook verification in one call.** HMAC-SHA256 against the raw body, constant-time.
 - The wire format is passed through unchanged: responses are plain maps with string keys, exactly as the server sent them. Library only, no CLI.
 
-Full API reference: <https://corvo.tech/en/docs>.
+Covers the 92 operations of the public API contract 0.3.0 (<https://corvo.tech/openapi.json>). Full API reference: <https://corvo.tech/en/docs>.
 
 ## Installation
 
 ```elixir
 def deps do
   [
-    {:corvo_nfse, "~> 0.2.0"}
+    {:corvo_nfse, "~> 0.3.0"}
   ]
 end
 ```
@@ -87,7 +87,7 @@ Issuing is asynchronous: a successful call means the request was accepted, not t
   )
 ```
 
-Use `"options" => %{"type" => "SCHEDULE"}` with a future `competenceDate` to schedule the issuance.
+Use `"options" => %{"type" => "SCHEDULE"}` with a future `competenceDate` (from tomorrow on) to schedule the issuance. In that case `{:ok, data}` is a **schedule** (snake_case fields), not an invoice: the note only exists when the schedule runs (09:00 America/Sao_Paulo, Monday to Friday). `"RECURRING"` repeats it, with `"recurrence" => %{"frequency" => "MONTHLY", "endsOn" => "2027-12-01"}`. See [Schedules](#schedules).
 
 To declare a deduction from the ISS base, send `"deduction"` (greater than 0 and less than `amount` minus `discount`). The invoice is still issued for the full `amount`, and you are responsible for the declared value.
 
@@ -126,6 +126,75 @@ The route allows 10 batches per minute per tenant (`429` with `Retry-After`).
 - `processing`: stays `"processing"` with `"cancellationRequestedAt"` set and is cancelled once authorized.
 
 The description (15 to 255 characters) is required for an authorized or processing invoice and optional for a queued one. Read the invoice again (or listen to the `nfse.invoice.cancelled` and `nfse.invoice.cancellation_rejected` webhooks) to see the outcome: `cancelled`, or back to `authorized` with `lastErrorCode` when the cancellation was rejected.
+
+### Look up a CNPJ and manage customers
+
+```elixir
+{:ok, cnpj} = CorvoNfse.Resources.Cnpj.lookup(client, "11222333000181")
+cnpj["legalName"]
+
+{:ok, page} = CorvoNfse.Resources.Customers.search(client, search: "ada", limit: 20)
+{:ok, customer} = CorvoNfse.Resources.Customers.get(client, "52998224725")
+{:ok, _} = CorvoNfse.Resources.Customers.update(client, "52998224725", %{"email" => "novo@example.com"})
+{:ok, _} = CorvoNfse.Resources.Customers.remove(client, "52998224725")
+
+{:ok, _favorite} =
+  CorvoNfse.Resources.ServiceFavorites.create(client, company_id, %{
+    "label" => "Consultoria", "serviceCode" => "010101", "description" => "Consultoria em TI"
+  })
+```
+
+### Substitute an invoice, send the e-mail elsewhere, review
+
+```elixir
+{:ok, substitute} =
+  CorvoNfse.Resources.Invoices.substitute(client, "inv_1", %{"description" => "Descricao corrigida"},
+    idempotency_key: "sub-1"
+  )
+
+{:ok, _} = CorvoNfse.Resources.Invoices.send_email(client, "inv_1", email: "outro@example.com")
+{:ok, _} = CorvoNfse.Resources.Invoices.review(client, "retry", ["inv_7"])  # invoices in manual_review
+```
+
+### Accountant package
+
+```elixir
+{:ok, _} = CorvoNfse.Resources.AccountantPackage.update(client, company_id, %{"accountantEmail" => "contador@example.com"})
+{:ok, _} = CorvoNfse.Resources.AccountantPackage.send(client, company_id, "2026-10")
+{:ok, %{body: zip}} = CorvoNfse.Resources.InvoicePackage.download(client, company_id, "2026-10")
+```
+
+### Schedules
+
+```elixir
+{:ok, page} = CorvoNfse.Resources.Schedules.list(client, status: "active")
+{:ok, _} = CorvoNfse.Resources.Schedules.pause(client, "sch_1")
+{:ok, runs} = CorvoNfse.Resources.Schedules.list_runs(client, "sch_1")
+```
+
+### Import a spreadsheet
+
+```elixir
+{:ok, %{body: template}} = CorvoNfse.Resources.Imports.download_template(client)
+{:ok, job} = CorvoNfse.Resources.Imports.start(client, {:file, "notas.csv"}, company_id: company_id)
+# poll Imports.get/2 until job["status"] == "ready", fix rows with update_row/4, then:
+{:ok, _} = CorvoNfse.Resources.Imports.emit(client, job["id"], send_email: true)
+```
+
+### Plans and credits
+
+Plan slugs are `free`, `solo`, `equipe`, `empresa` and `escala` (plus `self-hosted`); treat them as open strings and read the allowance from `monthlyCreditAllowance`.
+
+```elixir
+{:ok, %{"balance" => balance, "planRemaining" => plan, "avulsoBalance" => loose}} =
+  CorvoNfse.Resources.Credits.balance(client)   # balance = plan notes left + loose notes
+
+{:ok, %{"totalCents" => total}} = CorvoNfse.Resources.Credits.preview_purchase(client, 10)
+```
+
+### Webhook environments
+
+A webhook created with a `corvo_test_` key only receives test events and cannot reach live webhooks; use a `corvo_live_` key to manage live ones. Destinations that resolve to private networks are refused.
 
 ### Handling errors
 
@@ -175,7 +244,7 @@ if CorvoNfse.Webhooks.verify_signature(raw_body, signature, secret) do
 end
 ```
 
-`CorvoNfse.Types.Webhook.events/0` lists the 9 events you can subscribe to. The `webhook.test` event is only sent by `Webhooks.test/2`.
+`CorvoNfse.Types.Webhook.events/0` lists the 12 events you can subscribe to. The `webhook.test` event is only sent by `Webhooks.test/2`.
 
 ## Resources
 
@@ -183,13 +252,27 @@ end
 |---|---|
 | `CorvoNfse.Resources.Companies` | `create`, `list`, `iterate`, `get`, `update`, `remove` |
 | `CorvoNfse.Resources.Certificates` | `upload`, `list`, `remove` |
-| `CorvoNfse.Resources.Invoices` | `create`, `create_batch`, `calculate`, `get`, `list`, `iterate`, `events`, `pdf`, `xml`, `download_url`, `send_email`, `cancel` |
+| `CorvoNfse.Resources.Invoices` | `create`, `create_batch`, `calculate`, `get`, `list`, `iterate`, `events`, `pdf`, `xml`, `download_url`, `send_email`, `cancel`, `substitute`, `overview`, `review` |
+| `CorvoNfse.Resources.InvoicePackage` | `summary`, `download` |
+| `CorvoNfse.Resources.Customers` | `search`, `iterate`, `get`, `update`, `remove` |
+| `CorvoNfse.Resources.Cnpj` | `lookup` |
+| `CorvoNfse.Resources.ServiceFavorites` | `list`, `create`, `remove` |
+| `CorvoNfse.Resources.AccountantPackage` | `get`, `update`, `send`, `list_sends` |
+| `CorvoNfse.Resources.Schedules` | `list`, `iterate`, `get`, `update`, `pause`, `resume`, `cancel`, `list_runs`, `iterate_runs` |
+| `CorvoNfse.Resources.Imports` | `start`, `list`, `get`, `emit`, `list_rows`, `iterate_rows`, `update_row`, `discard`, `download_template`, `download_errors` |
+| `CorvoNfse.Resources.FiscalProfiles` | `list`, `upsert`, `approve` |
+| `CorvoNfse.Resources.ServiceTaxProfiles` | `list`, `create`, `update`, `remove`, `approve` |
+| `CorvoNfse.Resources.DpsSequence` | `get`, `set` |
+| `CorvoNfse.Resources.FiscalPortal` | `status` |
+| `CorvoNfse.Resources.Integrations` | `list_providers` |
+| `CorvoNfse.Resources.IntegrationConnections` | `create`, `list`, `get`, `validate`, `update_credentials`, `activate`, `pause`, `disconnect`, `list_rules`, `replace_rules`, `list_events`, `list_operations` |
+| `CorvoNfse.Resources.IntegrationOperations` | `complete_customer`, `retry` |
 | `CorvoNfse.Resources.Webhooks` | `list`, `create`, `remove`, `test` |
 | `CorvoNfse.Resources.Webhooks.Deliveries` | `list`, `iterate`, `stats`, `retry` |
-| `CorvoNfse.Resources.Credits` | `balance`, `plans`, `history`, `iterate_history` |
+| `CorvoNfse.Resources.Credits` | `balance`, `plans`, `history`, `iterate_history`, `preview_purchase` |
 | `CorvoNfse.Resources.Billing` | `plan`, `usage` |
-| `CorvoNfse.Resources.Plans` | `list`, `get`, `quote` (public price catalog) |
-| `CorvoNfse.Resources.Health` | `live`, `ready` |
+| `CorvoNfse.Resources.Health` | `live` (and `ready`, which is not part of the contract) |
+| `CorvoNfse.Resources.Plans` | `list`, `get`, `quote` (public price catalog, not part of the contract) |
 
 Changing plans and the billing portal exist only in the dashboard, so they are not in the SDK. `CorvoNfse.Types.*` documents every wire type with `defstruct` and `@type`.
 
@@ -211,9 +294,12 @@ Auth is the `X-API-Key` header. Keys are `corvo_test_...` or `corvo_live_...` an
 
 ```bash
 mix deps.get
-mix test      # the contract test is excluded without env
+mix test      # the live contract test is excluded without env
+mix format --check-formatted
 mix credo --strict
 ```
+
+`spec/openapi.json` is the vendored API contract (from `docs/openapi/openapi.json` in corvo-nfse). `test/corvo_nfse/openapi_coverage_test.exs` maps every `operationId` to an SDK function and checks its HTTP method, path, query and body against the contract: when the API changes, replace the file and the test names what is missing.
 
 The contract test runs only when `CORVO_API_KEY` and `CORVO_BASE_URL` point to a reachable instance.
 

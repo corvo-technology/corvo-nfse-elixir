@@ -14,16 +14,18 @@ defmodule CorvoNfse.CreditsBillingTest do
     expect_request(
       json_response(%{
         "data" => %{
-          "tenantId" => "ten_1",
-          "balance" => 100,
-          "overageUnits" => 0,
-          "overageAmountCents" => 0,
-          "hardLimit" => nil
+          "balance" => 105,
+          "planRemaining" => 100,
+          "avulsoBalance" => 5,
+          "hardLimit" => 0
         }
       })
     )
 
-    assert {:ok, %{"balance" => 100}} = Credits.balance(client())
+    assert {:ok, %{"balance" => 105, "planRemaining" => 100, "avulsoBalance" => 5} = balance} =
+             Credits.balance(client())
+
+    refute Map.has_key?(balance, "overageUnits")
 
     request = assert_request()
     assert request.method == :get
@@ -33,13 +35,13 @@ defmodule CorvoNfse.CreditsBillingTest do
   test "plans returns the items of the page" do
     expect_request(
       json_response(%{
-        "data" => [%{"id" => "plan_1", "slug" => "scale"}],
+        "data" => [%{"id" => "plan_1", "slug" => "equipe"}],
         "pagination" => %{"limit" => 1, "hasMore" => false, "nextCursor" => nil}
       })
     )
 
     assert {:ok, page} = Credits.plans(client())
-    assert [%{"id" => "plan_1", "slug" => "scale"}] = page.data
+    assert [%{"id" => "plan_1", "slug" => "equipe"}] = page.data
 
     request = assert_request()
     assert request.url == @base <> "/credits/plans"
@@ -71,13 +73,43 @@ defmodule CorvoNfse.CreditsBillingTest do
     assert request.url == @base <> "/credits/history?limit=1"
   end
 
+  test "preview_purchase is a GET with the units in the query" do
+    expect_request(
+      json_response(%{"data" => %{"units" => 10, "unitPriceCents" => 99, "totalCents" => 990}})
+    )
+
+    assert {:ok, %{"units" => 10, "totalCents" => 990}} = Credits.preview_purchase(client(), 10)
+
+    request = assert_request()
+    assert request.method == :get
+    assert request.url == @base <> "/credits/purchase/preview?units=10"
+    assert request.body == nil
+  end
+
+  test "billing plan without a plan assigned is a NO_PLAN_ASSIGNED error" do
+    expect_request(
+      json_response(
+        %{
+          "statusCode" => 404,
+          "code" => "NO_PLAN_ASSIGNED",
+          "message" => "no plan",
+          "requestId" => "r1"
+        },
+        status: 404
+      )
+    )
+
+    assert {:error, %CorvoNfse.Error{status: 404, code: "NO_PLAN_ASSIGNED"}} =
+             Billing.plan(client())
+  end
+
   test "billing plan and usage" do
     expect_request(
       json_response(%{
         "data" => %{
           "plan" => %{
-            "slug" => "starter",
-            "name" => "Starter",
+            "slug" => "solo",
+            "name" => "Solo",
             "monthly_allowance" => 100,
             "daily_limit" => nil,
             "max_active_companies" => 3,
@@ -88,12 +120,14 @@ defmodule CorvoNfse.CreditsBillingTest do
             "paid_until" => nil,
             "cancel_at_period_end" => false,
             "scheduled_plan" => nil,
-            "blocked" => false
+            "blocked" => false,
+            "stripe_portal_available" => false,
+            "stripe_subscription" => false,
+            "pix_subscription" => nil
           },
           "usage" => %{
-            "overage_units" => 0,
-            "overage_amount_cents" => 0,
-            "hard_limit" => nil,
+            "avulso_balance" => 4,
+            "hard_limit" => 0,
             "credits_used" => 1,
             "credits_reserved" => 0,
             "credits_remaining" => 99,
@@ -109,7 +143,9 @@ defmodule CorvoNfse.CreditsBillingTest do
       })
     )
 
-    assert {:ok, %{"plan" => %{"slug" => "starter"}}} = Billing.plan(client())
+    assert {:ok, %{"plan" => %{"slug" => "solo"}, "usage" => %{"avulso_balance" => 4}}} =
+             Billing.plan(client())
+
     request = assert_request()
     assert request.url == @base <> "/billing/plan"
 
